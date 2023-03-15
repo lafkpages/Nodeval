@@ -1,6 +1,9 @@
 # MacOS
 .DS_Store
 
+# Testing
+test.js
+
 # Logs
 logs
 *.log
