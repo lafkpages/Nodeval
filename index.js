@@ -9,8 +9,10 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const platform = os.platform();
+
 const port = parseInt(process.env.NODEVAL_PORT) || 4096;
-const shell = process.env.NODEVAL_SHELL || (os.platform() == 'win32'? 'powershell.exe' : 'bash');
+const shell = process.env.NODEVAL_SHELL || (platform == 'win32'? 'powershell.exe' : 'bash');
 
 process.on('uncaughtException', err => {
   if (err.code == 'EADDRINUSE') {
@@ -408,6 +410,7 @@ wss.on('close', () => {
 setTimeout(() => {
   const nodevalUrl = `ws://127.0.0.1:${port}`;
   console.log(`Listening on ${nodevalUrl} (copied to clipboard)`);
+
 
   const copyNodevalUrlProc = spawn('pbcopy');
   copyNodevalUrlProc.stdin.write(nodevalUrl);
