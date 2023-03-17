@@ -97,7 +97,8 @@ wss.on('connection', ws => {
             cwd: process.cwd(),
             env: {
               NODEVAL_SHELL: '1',
-              ...process.env
+              ...process.env,
+              PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]'
             }
           });
           channels[chanId].process.on('data', output => {
