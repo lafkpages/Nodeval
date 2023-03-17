@@ -4,6 +4,7 @@ const { api } = require("@replit/protocol");
 const { exec, spawn } = require('child_process');
 const { spawn: spawnPty } = require('node-pty');
 const { query, mutate, setSid } = require('replit-graphql');
+const { applyOTs } = require('./ot');
 const fs = require('fs');
 const dotenv = require('dotenv');
 
