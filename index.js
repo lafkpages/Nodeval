@@ -52,6 +52,8 @@ wss.on('connection', ws => {
     // TODO
   };
 
+  ws.on('close', ws.onDisconnected);
+
   ws.on('pong', () => {
     ws.isAlive = true;
   });
