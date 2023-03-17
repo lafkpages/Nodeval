@@ -12,8 +12,6 @@
   "dependencies": {
     "@replit/protocol": "^0.2.97",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "express-ws": "^5.0.2",
     "node-pty": "^0.10.1",
     "replit-graphql": "^2.0.9",
     "ws": "^8.11.0"
