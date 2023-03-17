@@ -138,6 +138,8 @@ wss.on('connection', ws => {
       // TODO: use msg.closeChan.action (DISCONNECT|CLOSE|TRY_CLOSE)
       delete channels[msg.closeChan.id];
 
+      console.log('Closing channel ID', msg.closeChan.id, `with service "${msg._service}":`, msg.closeChan.action);
+
       ws.send(api.Command.encode(new api.CloseChannelRes({
         channel: 0,
         ref: msg.ref,
