@@ -409,10 +409,14 @@ wss.on('close', () => {
 
 setTimeout(() => {
   const nodevalUrl = `ws://127.0.0.1:${port}`;
-  console.log(`Listening on ${nodevalUrl} (copied to clipboard)`);
+  process.stdout.write(`Listening on ${nodevalUrl}`);
 
+  if (platform == 'darwin') {
+    const copyNodevalUrlProc = spawn('pbcopy');
+    copyNodevalUrlProc.stdin.write(nodevalUrl);
+    copyNodevalUrlProc.stdin.end();
+    process.stdout.write(' (copied to clipboard)');
+  }
 
-  const copyNodevalUrlProc = spawn('pbcopy');
-  copyNodevalUrlProc.stdin.write(nodevalUrl);
-  copyNodevalUrlProc.stdin.end();
+  console.log('');
 }, 100);
