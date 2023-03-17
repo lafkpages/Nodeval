@@ -53,7 +53,7 @@ wss.on('connection', ws => {
   const sessionId = ++lastSessId;
 
   ws.onDisconnected = () => {
-    console.log('Client disconnected: user ID', userId, `aka "@${username}"`);
+    console.log('Client disconnected: user ID', userId, `aka "@${username}", session ID`, sessionId);
 
     // Close all channels if no one else is here
     // TODO
@@ -171,7 +171,7 @@ wss.on('connection', ws => {
         }).then(res => {
           username = res.data.user.username;
 
-          console.log('Client is', msg.userEvent.eventName == 'meta:ready'? 'ready' : 'starting', 'user ID', userId, `aka "@${username}"`);
+          console.log('Client is', msg.userEvent.eventName == 'meta:ready'? 'ready' : 'starting', 'user ID', userId, `aka "@${username}", session ID`, sessionId);
         });
       } else if (msg.userEvent.eventName.startsWith('user:shell:')) {
         // ignore
