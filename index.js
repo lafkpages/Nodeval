@@ -31,8 +31,6 @@ const channels = {};
 let lastChanId = 0;
 let lastSessId = 1;
 
-let tempDir = null;
-
 // Create .env
 fs.writeFile('.env', '', { flag: 'wx' }, () => {});
 
