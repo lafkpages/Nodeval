@@ -1,0 +1,21 @@
+{
+  "name": "nodeval",
+  "version": "1.0.0",
+  "description": "A Replit Goval server in Node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "LuisAFK",
+  "license": "ISC",
+  "dependencies": {
+    "@replit/protocol": "^0.2.97",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-ws": "^5.0.2",
+    "node-pty": "^0.10.1",
+    "replit-graphql": "^2.0.9",
+    "ws": "^8.11.0"
+  }
+}
