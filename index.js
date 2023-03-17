@@ -34,16 +34,6 @@ let tempDir = null;
 // Create .env
 fs.writeFile('.env', '', { flag: 'wx' }, () => {});
 
-// Create temp dir
-// fs.mkdtemp('nodeval', (err, dir) => {
-//   if (err) {
-//     console.error('Error creating temp dir:', err);
-//     process.exit(2);
-//   }
-
-//   tempDir = dir;
-// });
-
 wss.on('connection', ws => {
   ws.isAlive = true;
 
