@@ -13,6 +13,13 @@ const platform = os.platform();
 
 const port = parseInt(process.env.NODEVAL_PORT) || 4096;
 const shell = process.env.NODEVAL_SHELL || (platform == 'win32'? 'powershell.exe' : 'bash');
+const nodevalReplId = process.env.NODEVAL_REPL_ID || null;
+
+if (!nodevalReplId) {
+  console.warn('Warning: no Nodeval Repl ID specified. All Repls will be passed to Nodeval.');
+}
+
+// TODO: if the user connects from a Repl that isn't nodevalReplId, proxy to normal Replit Goval
 
 process.on('uncaughtException', err => {
   if (err.code == 'EADDRINUSE') {
