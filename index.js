@@ -435,10 +435,23 @@ setTimeout(() => {
   const nodevalUrl = `ws://127.0.0.1:${port}`;
   process.stdout.write(`Listening on ${nodevalUrl}`);
 
-  if (platform == 'darwin') {
-    const copyNodevalUrlProc = spawn('pbcopy');
-    copyNodevalUrlProc.stdin.write(nodevalUrl);
-    copyNodevalUrlProc.stdin.end();
+  let copied = false;
+
+  switch (platform) {
+    case 'darwin':
+      const copyNodevalUrlProcDarwin = spawn('pbcopy');
+      copyNodevalUrlProcDarwin.stdin.end(nodevalUrl);
+      copied = true;
+      break;
+
+    case 'win32':
+      const copyNodevalUrlProcWin32 = spawn('clip');
+      copyNodevalUrlProcWin32.stdin.end(nodevalUrl);
+      copied = true;
+      break;
+  }
+
+  if (copied) {
     process.stdout.write(' (copied to clipboard)');
   }
 
