@@ -121,21 +121,21 @@ wss.on('connection', ws => {
           });
           break;
 
-        // case 'ot':
-        //   channels[chanId].otstatus = {
-        //     content: '',
-        //     version: 0,
-        //     linkedFile: null,
-        //     cursors: []
-        //   };
-        //   setTimeout(() => {
-        //     ws.send(api.Command.encode(new api.Command({
-        //       channel: chanId,
-        //       ref: msg.ref,
-        //       otstatus: channels[chanId].otstatus
-        //     })).finish());
-        //   }, 10);
-        //   break;
+        case 'ot':
+          channels[chanId].otstatus = {
+            content: '',
+            version: 0,
+            linkedFile: null,
+            cursors: []
+          };
+          setTimeout(() => {
+            ws.send(api.Command.encode(new api.Command({
+              channel: chanId,
+              ref: msg.ref,
+              otstatus: channels[chanId].otstatus
+            })).finish());
+          }, 10);
+          break;
       }
 
       ws.send(api.Command.encode(new api.OpenChannelRes({
@@ -369,11 +369,25 @@ wss.on('connection', ws => {
         }
       });
     } else if (msg.otLinkFile) {
-      ws.send(api.Command.encode(new api.Command({
-        channel: msg.channel,
-        ref: msg.ref,
-        
-      })).finish());
+      if (channels[msg.channel].otstatus) {
+        fs.readFile(msg.otLinkFile.file.path, (err, data) => {
+          // TODO: handle errors
+
+          channels[msg.channel].otstatus.linkedFile = msg.otLinkFile.file.path;
+          ws.send(api.Command.encode(new api.Command({
+            channel: msg.channel,
+            ref: msg.ref,
+            session: sessionId,
+            otLinkFileResponse: {
+              version: 1,
+              linkedFile: {
+                path: msg.otLinkFile.file.path,
+                content: data.toString('base64')
+              }
+            }
+          })).finish());
+        });
+      }
     } else if (msg.resizeTerm) {
       if (channels[msg.channel].process) {
         channels[msg.channel].process.resize(msg.resizeTerm.cols, msg.resizeTerm.rows);
