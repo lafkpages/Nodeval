@@ -70,7 +70,8 @@ wss.on('connection', ws => {
     msg = api.Command.decode(msg);
 
     if (msg.channel) {
-      msg._service = channels[msg.channel].openChan.service
+      msg._service = channels[msg.channel].openChan.service;
+      msg._chanName = channels[msg.channel].openChan.name;
     }
 
     if (msg.ping) {
