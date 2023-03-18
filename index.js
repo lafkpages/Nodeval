@@ -5,6 +5,7 @@ const { exec, spawn } = require('child_process');
 const { spawn: spawnPty } = require('node-pty');
 const { query, mutate, setSid } = require('replit-graphql');
 const { applyOTs } = require('./ot');
+const disk = require('diskusage');
 const fs = require('fs');
 const dotenv = require('dotenv');
 
@@ -184,7 +185,6 @@ wss.on('connection', ws => {
       if (msg.exec.args[0] == 'bash' && msg.exec.args[1] == '-c' && msg.exec.args[2] == 'date \'+%s%N\' && cat /sys/fs/cgroup/cpu/cpuacct.usage /sys/fs/cgroup/cpu/cpu.cfs_quota_us /sys/fs/cgroup/cpu/cpu.cfs_period_us /sys/fs/cgroup/memory/memory.usage_in_bytes /sys/fs/cgroup/memory/memory.soft_limit_in_bytes /sys/fs/cgroup/memory/memory.limit_in_bytes &&grep \'^\\(total_rss\\|total_cache\\) \' /sys/fs/cgroup/memory/memory.stat') {
         ws.send(api.Command.encode(new api.Command({
           channel: msg.channel,
-          ref: msg.ref,
           state: api.State.Running
         })).finish());
 
@@ -198,11 +198,39 @@ wss.on('connection', ws => {
           setTimeout(() => {
             ws.send(api.Command.encode(new api.Command({
               channel: msg.channel,
-              ref: msg.ref,
               state: api.State.Stopped
             })).finish());
           }, 10);
         }, 10);
+      } else if (msg.exec.args[0] == 'bash' && msg.exec.args[1] == '-c' && msg.exec.args[2] == 'cat /repl/stats/subvolume_usage_bytes /repl/stats/subvolume_total_bytes') {
+        ws.send(api.Command.encode(new api.Command({
+          channel: msg.channel,
+          state: api.State.Running
+        })).finish());
+
+        disk.check('.', (err, diskUsage) => {
+          // TODO: handle errors
+
+          ws.send(api.Command.encode(new api.Command({
+            channel: msg.channel,
+            output: `${diskUsage.total - diskUsage.free}\n${diskUsage.total}\n`
+          })).finish());
+
+          setTimeout(() => {
+            ws.send(api.Command.encode(new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              ok: {}
+            })).finish());
+
+            setTimeout(() => {
+              ws.send(api.Command.encode(new api.Command({
+                channel: msg.channel,
+                state: api.State.Stopped
+              })).finish());
+            }, 10);
+          }, 10);
+        });
       } else {
         const cmd = msg.exec.args.map(s => {
           // Escape quotes and escapes
@@ -216,7 +244,6 @@ wss.on('connection', ws => {
 
         ws.send(api.Command.encode(new api.Command({
           channel: msg.channel,
-          ref: msg.ref,
           state: api.State.Running
         })).finish());
 
@@ -244,7 +271,6 @@ wss.on('connection', ws => {
           setTimeout(() => {
             ws.send(api.Command.encode(new api.Command({
               channel: msg.channel,
-              ref: msg.ref,
               state: api.State.Stopped
             })).finish());
           }, 10);
