@@ -428,6 +428,17 @@ wss.on('connection', ws => {
           session: sessionId
         })).finish());
       });
+    } else if (msg.fsSnapshot) {
+      console.log('Taking snapshot');
+
+      // TODO: actually finish this
+
+      ws.send(api.Command.encode(new api.Command({
+        channel: msg.channel,
+        ref: msg.ref,
+        ok: {},
+        session: sessionId
+      })).finish()); 
     } else if (msg.resizeTerm) {
       if (channels[msg.channel].process) {
         channels[msg.channel].process.resize(msg.resizeTerm.cols, msg.resizeTerm.rows);
