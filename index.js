@@ -415,6 +415,19 @@ wss.on('connection', ws => {
           })).finish());
         });
       }
+    } else if (msg.remove) {
+      fs.rm(msg.remove.path, err => {
+        // TODO: handle errors
+
+        console.log('Removed file', msg.remove.path);
+
+        ws.send(api.Command.encode(new api.Command({
+          channel: msg.channel,
+          ref: msg.ref,
+          ok: {},
+          session: sessionId
+        })).finish());
+      });
     } else if (msg.resizeTerm) {
       if (channels[msg.channel].process) {
         channels[msg.channel].process.resize(msg.resizeTerm.cols, msg.resizeTerm.rows);
