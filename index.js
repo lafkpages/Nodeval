@@ -113,8 +113,7 @@ wss.on('connection', ws => {
           break;
 
         case 'shell':
-        // case 'shellrun':
-        // case 'shellrun2':
+        case 'shellrun2':
           channels[chanId].process = spawnPty(shell, [], {
             name: 'xterm-256color',
             cols: 80,
@@ -136,6 +135,16 @@ wss.on('connection', ws => {
               output
             })).finish());
           });
+
+          if (msg.openChan.service == 'shellrun2') {
+            setTimeout(() => {
+              ws.send(api.Command.encode(new api.Command({
+                channel: chanId,
+                state: api.State.Stopped
+              })).finish());
+            }, 10);
+          }
+
           break;
 
         case 'ot':
