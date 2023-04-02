@@ -43,6 +43,9 @@ let lastSessId = 1;
 // Create .env
 fs.writeFile('.env', '', { flag: 'wx' }, () => {});
 
+// Create .replit
+fs.writeFile('.replit', '', { flag: 'wx' }, () => {});
+
 wss.on('connection', ws => {
   ws.isAlive = true;
 
