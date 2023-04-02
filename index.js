@@ -427,7 +427,10 @@ wss.on('connection', ws => {
         ok: {}
       })).finish());
     } else if (msg.remove) {
-      fs.rm(msg.remove.path, err => {
+      fs.rm(msg.remove.path, {
+        force: true,
+        recursive: true
+      }, err => {
         // TODO: handle errors
 
         console.log('Removed file', msg.remove.path);
