@@ -455,6 +455,17 @@ wss.on('connection', ws => {
           session: sessionId
         })).finish());
       })
+    } else if (msg.mkdir) {
+      fs.mkdir(msg.mkdir.path, err => {
+        // TODO: handle errors
+
+        ws.send(api.Command.encode(new api.Command({
+          channel: msg.channel,
+          ref: msg.ref,
+          ok: {},
+          session: sessionId
+        })).finish());
+      });
     } else if (msg.fsSnapshot) {
       console.log('Taking snapshot');
 
