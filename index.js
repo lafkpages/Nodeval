@@ -55,6 +55,35 @@ try {
 
 }
 
+function startPty(chanId, ws, replId, username, userId, replUrl) {
+  channels[chanId].process = spawnPty(shell, [], {
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      NODEVAL_SHELL: '1',
+      PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]',
+      REPL_ID: replId,
+      REPL_OWNER: username,
+      REPL_OWNER_ID: userId,
+      REPL_URL: replUrl
+    }
+  });
+  channels[chanId].process.on('data', output => {
+    ws.send(api.Command.encode(new api.Command({
+      channel: chanId,
+      output
+    })).finish());
+  });
+  channels[chanId].process.on('exit', () => {
+    console.log('Shell exited, respawning...');
+
+    startPty(...arguments);
+  });
+}
+
 // Import previous file history
 const fileHistory = require('./.file-history.json');
 
@@ -114,27 +143,7 @@ wss.on('connection', ws => {
 
         case 'shell':
         case 'shellrun2':
-          channels[chanId].process = spawnPty(shell, [], {
-            name: 'xterm-256color',
-            cols: 80,
-            rows: 24,
-            cwd: process.cwd(),
-            env: {
-              ...process.env,
-              NODEVAL_SHELL: '1',
-              PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]',
-              REPL_ID: replId,
-              REPL_OWNER: username,
-              REPL_OWNER_ID: userId,
-              REPL_URL: replUrl
-            }
-          });
-          channels[chanId].process.on('data', output => {
-            ws.send(api.Command.encode(new api.Command({
-              channel: chanId,
-              output
-            })).finish());
-          });
+          startPty(chanId, ws, replId, username, userId, replUrl);
 
           if (msg.openChan.service == 'shellrun2') {
             setTimeout(() => {
