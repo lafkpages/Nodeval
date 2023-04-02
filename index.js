@@ -479,7 +479,7 @@ wss.on('connection', ws => {
         ref: msg.ref,
         ok: {},
         session: sessionId
-      })).finish()); 
+      })).finish());
     } else if (msg.resizeTerm) {
       if (channels[msg.channel].process) {
         channels[msg.channel].process.resize(msg.resizeTerm.cols, msg.resizeTerm.rows);
