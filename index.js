@@ -406,7 +406,14 @@ wss.on('connection', ws => {
     } else if (msg.otLinkFile) {
       if (channels[msg.channel].otstatus) {
         fs.readFile(msg.otLinkFile.file.path, (err, data) => {
-          // TODO: handle errors
+          if (err) {
+            ws.send(api.Command.encode(new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              error: `unable to read file content from ot: open ${msg.otLinkFile.file.path}: no such file or directory`
+            })).finish());
+            return;
+          }
 
           channels[msg.channel].otstatus.linkedFile = msg.otLinkFile.file.path;
           ws.send(api.Command.encode(new api.Command({
