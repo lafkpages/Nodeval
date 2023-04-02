@@ -55,7 +55,9 @@ try {
 
 }
 
-function startPty(chanId, ws, replId, username, userId, replUrl) {
+function startPty(chanId, ws, infoCallback) {
+  const [ replId, username, userId, replUrl ] = infoCallback();
+
   channels[chanId].process = spawnPty(shell, [], {
     name: 'xterm-256color',
     cols: 80,
@@ -71,12 +73,14 @@ function startPty(chanId, ws, replId, username, userId, replUrl) {
       REPL_URL: replUrl
     }
   });
+
   channels[chanId].process.on('data', output => {
     ws.send(api.Command.encode(new api.Command({
       channel: chanId,
       output
     })).finish());
   });
+
   channels[chanId].process.on('exit', () => {
     console.log('Shell exited, respawning...');
 
@@ -143,7 +147,11 @@ wss.on('connection', ws => {
 
         case 'shell':
         case 'shellrun2':
-          startPty(chanId, ws, replId, username, userId, replUrl);
+          startPty(chanId, ws, () => {
+            return [
+              replId, username, userId, replUrl
+            ];
+          });
 
           if (msg.openChan.service == 'shellrun2') {
             setTimeout(() => {
