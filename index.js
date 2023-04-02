@@ -8,6 +8,7 @@ const { applyOTs } = require('./ot');
 const disk = require('diskusage');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const crc32 = require('crc/crc32');
 
 dotenv.config();
 
