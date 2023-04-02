@@ -439,6 +439,19 @@ wss.on('connection', ws => {
           session: sessionId
         })).finish());
       });
+    } else if (msg.move) {
+      fs.rename(msg.move.oldPath, msg.move.newPath, err => {
+        // TODO: handle errors
+
+        console.log(`Renamed ${msg.move.oldPath} to ${msg.move.newPath}`);
+
+        ws.send(api.Command.encode(new api.Command({
+          channel: msg.channel,
+          ref: msg.ref,
+          ok: {},
+          session: sessionId
+        })).finish());
+      })
     } else if (msg.fsSnapshot) {
       console.log('Taking snapshot');
 
