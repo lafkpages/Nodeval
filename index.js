@@ -191,7 +191,7 @@ wss.on('connection', ws => {
 
           console.log('Client is', msg.userEvent.eventName == 'meta:ready'? 'ready' : 'starting', 'user ID', userId, `aka "@${username}", session ID`, sessionId);
         });
-      } else if (msg.userEvent.eventName.startsWith('user:shell:')) {
+      } else if (msg.userEvent.eventName == 'user:run:output' || msg.userEvent.eventName.startsWith('user:shell:')) {
         // ignore
       } else {
         console.log(`Received user event "${msg.userEvent.eventName}":`, msg.userEvent.eventData);
