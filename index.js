@@ -380,6 +380,8 @@ wss.on('connection', ws => {
         }
       });
     } else if (msg.write) {
+      const content = msg.write.content || '';
+
       fs.writeFile(msg.write.path, msg.write.content, err => {
         if (err) {
           ws.send(api.Command.encode(new api.Command({
