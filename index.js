@@ -46,6 +46,9 @@ fs.writeFile('.env', '', { flag: 'wx' }, () => {});
 // Create .replit
 fs.writeFile('.replit', '', { flag: 'wx' }, () => {});
 
+// Create file history file
+fs.writeFile('.file-history', '{}', { flag: 'wx' }, () => {});
+
 wss.on('connection', ws => {
   ws.isAlive = true;
 
