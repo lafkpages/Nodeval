@@ -4,6 +4,9 @@
 # Testing
 test.js
 
+# File history
+.file-history.json
+
 # Logs
 logs
 *.log
