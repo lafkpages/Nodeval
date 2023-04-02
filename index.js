@@ -490,6 +490,24 @@ wss.on('connection', ws => {
       if (proc) {
         proc.write(msg.input);
       }
+    } else if (msg.toolchainGetRequest) {
+      ws.send(api.Command.encode(new api.Command({
+        channel: msg.channel,
+        ref: msg.ref,
+        session: sessionId,
+        toolchainGetResponse: {
+          configs: {
+            entrypoint: 'README.md',
+            runs: [
+              {
+                id: '.replit/run',
+                name: 'sh -c \'echo Run command from Nodeval\'',
+                fileTypeAttrs: {}
+              }
+            ]
+          }
+        }
+      })).finish()); 
     } else {
       console.log(msg);
     }
