@@ -418,6 +418,85 @@ wss.on('connection', ws => {
               }
             }
           })).finish());
+          setTimeout(() => {
+            ws.send(api.Command.encode(new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              ok: {}
+            })).finish());
+          }, 10);
+        });
+      }
+    } else if (msg.otNewCursor) {
+      if (channels[msg.channel].otstatus) {
+        channels[msg.channel].otstatus.cursors.push({
+          position: msg.otNewCursor.position,
+          selectionStart: msg.otNewCursor.selectionStart,
+          selectionEnd: msg.otNewCursor.selectionEnd,
+          user: {
+            id: msg.otNewCursor.user.id,
+            name: msg.otNewCursor.user.name
+          },
+          id: msg.otNewCursor.id
+        });
+      }
+    } else if (msg.otDeleteCursor) {
+      if (channels[msg.channel].otstatus) {
+        channels[msg.channel].otstatus.cursors = channels[msg.channel].otstatus.cursors.filter(cursor => cursor.id != msg.otDeleteCursor.id);
+      }
+    } else if (msg.ot) {
+      const file = channels[msg.channel].otstatus?.linkedFile || null;
+      if (file) {
+        fs.readFile(file, 'utf-8', (err, data) => {
+          // TODO: handle errors
+
+          try {
+            const newFile = applyOTs(data, msg.ot.op, 0, true);
+            const now = Date.now();
+
+            const newCrc = crc32(newFile.file);
+
+            const newVersion = msg.ot.spookyVersion + 1;
+
+            ws.send(api.Command.encode(new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              session: sessionId,
+              ot: {
+                spookyVersion: newVersion,
+                op: msg.ot.op,
+                crc32: newCrc,
+                comitted: {
+                  seconds: Math.floor(now / 1000),
+                  nanos: now * 1e+6
+                },
+                version: newVersion,
+                userId
+              }
+            })).finish());
+
+            fs.writeFile(file, newFile.file, 'utf-8', err => {
+              // TODO: handle errors
+              // TODO: only flush when needed
+              console.debug('Flushed OTs');
+            });
+
+            setTimeout(() => {
+              ws.send(api.Command.encode(new api.Command({
+                channel: msg.channel,
+                ref: msg.ref,
+                session: sessionId,
+                ok: {}
+              })).finish());
+            }, 10);
+          } catch (err) {
+            ws.send(api.Command.encode(new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              session: sessionId,
+              error: err.message
+            })).finish());
+          }
         });
       }
     } else if (msg.flush) {
