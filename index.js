@@ -507,7 +507,14 @@ wss.on('connection', ws => {
             ]
           }
         }
-      })).finish()); 
+      })).finish());
+    } else if (msg.nixModulesGetRequest) {
+      ws.send(api.Command.encode(new api.Command({
+        channel: msg.channel,
+        ref: msg.ref,
+        session: sessionId,
+        nixModulesGetResponse: {}
+      })).finish());
     } else {
       console.log(msg);
     }
