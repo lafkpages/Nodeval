@@ -48,7 +48,14 @@ fs.writeFile('.env', '', { flag: 'wx' }, () => {});
 fs.writeFile('.replit', '', { flag: 'wx' }, () => {});
 
 // Create file history file
-fs.writeFile('.file-history.json', '{}', { flag: 'wx' }, () => {});
+try {
+  fs.writeFileSync('.file-history.json', '{}', { flag: 'wx' });
+} catch {
+
+}
+
+// Import previous file history
+const fileHistory = require('./.file-history.json');
 
 wss.on('connection', ws => {
   ws.isAlive = true;
@@ -406,25 +413,55 @@ wss.on('connection', ws => {
       });
     } else if (msg.otLinkFile) {
       if (channels[msg.channel].otstatus) {
-        fs.readFile(msg.otLinkFile.file.path, (err, data) => {
+        const path = normalizePath(msg.otLinkFile.file.path);
+
+        fs.readFile(path, (err, data) => {
           if (err) {
             ws.send(api.Command.encode(new api.Command({
               channel: msg.channel,
               ref: msg.ref,
-              error: `unable to read file content from ot: open ${msg.otLinkFile.file.path}: no such file or directory`
+              error: `unable to read file content from ot: open ${path}: no such file or directory`
             })).finish());
             return;
           }
 
-          channels[msg.channel].otstatus.linkedFile = msg.otLinkFile.file.path;
+          const now = Date.now();
+
+          if (!fileHistory[path]) {
+            fileHistory[path] = {
+              versions: [
+                {
+                  spookyVersion: 1,
+                  op: [
+                    {
+                      insert: data.toString('utf-8')
+                    }
+                  ],
+                  crc32: crc32(data),
+                  comitted: {
+                    seconds: Math.floor(now / 1000).toString(),
+                    nanos: 0
+                  },
+                  version: 1,
+                  userId
+                }
+              ]
+            };
+
+            console.log('Created initial version of', path);
+          }
+
+          channels[msg.channel].otstatus.linkedFile = path;
+          channels[msg.channel].otstatus.version = fileHistory[path].versions.length;
+
           ws.send(api.Command.encode(new api.Command({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
             otLinkFileResponse: {
-              version: 1,
+              version: fileHistory[path].versions.length,
               linkedFile: {
-                path: msg.otLinkFile.file.path,
+                path: path,
                 content: data.toString('base64')
               }
             }
@@ -456,7 +493,8 @@ wss.on('connection', ws => {
         channels[msg.channel].otstatus.cursors = channels[msg.channel].otstatus.cursors.filter(cursor => cursor.id != msg.otDeleteCursor.id);
       }
     } else if (msg.ot) {
-      const file = channels[msg.channel].otstatus?.linkedFile || null;
+      const file = normalizePath(channels[msg.channel].otstatus?.linkedFile) || null;
+
       if (file) {
         fs.readFile(file, 'utf-8', (err, data) => {
           // TODO: handle errors
@@ -465,25 +503,27 @@ wss.on('connection', ws => {
             const newFile = applyOTs(data, msg.ot.op, 0, true);
             const now = Date.now();
 
-            const newCrc = crc32(newFile.file);
+            const newVersion = fileHistory[file].versions.length + 1;
 
-            const newVersion = msg.ot.spookyVersion + 1;
+            const packet = {
+              spookyVersion: newVersion,
+              op: msg.ot.op,
+              crc32: crc32(newFile.file),
+              comitted: {
+                seconds: Math.floor(now / 1000).toString(),
+                nanos: 0
+              },
+              version: newVersion,
+              userId
+            };
+
+            fileHistory[file].versions.push(packet);
 
             ws.send(api.Command.encode(new api.Command({
               channel: msg.channel,
               ref: msg.ref,
               session: sessionId,
-              ot: {
-                spookyVersion: newVersion,
-                op: msg.ot.op,
-                crc32: newCrc,
-                comitted: {
-                  seconds: Math.floor(now / 1000),
-                  nanos: now * 1e+6
-                },
-                version: newVersion,
-                userId
-              }
+              ot: packet
             })).finish());
 
             fs.writeFile(file, newFile.file, 'utf-8', err => {
@@ -510,6 +550,21 @@ wss.on('connection', ws => {
           }
         });
       }
+    } else if (msg.otFetchRequest) {
+      // TODO: don't ignore versionFrom and versionTo
+
+      const path = normalizePath(channels[msg.channel].otstatus?.linkedFile);
+
+      console.log('Got', fileHistory[path].versions.length, 'versions from file history');
+
+      ws.send(api.Command.encode(new api.Command({
+        channel: msg.channel,
+        ref: msg.ref,
+        session: sessionId,
+        otFetchResponse: {
+          packets: fileHistory[path].versions
+        }
+      })).finish());
     } else if (msg.flush) {
       // TODO: flusing now instead of on every OT
 
@@ -664,3 +719,7 @@ setTimeout(() => {
 
   console.log('');
 }, 100);
+
+setInterval(() => {
+  fs.writeFile('.file-history.json', JSON.stringify(fileHistory, null, 2), 'utf-8', () => {});
+}, 5000);
