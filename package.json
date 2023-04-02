@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@replit/protocol": "^0.2.97",
+    "crc": "^4.3.2",
     "diskusage": "^1.1.3",
     "dotenv": "^16.0.3",
     "node-pty": "^0.10.1",
