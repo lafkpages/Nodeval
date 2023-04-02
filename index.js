@@ -415,6 +415,15 @@ wss.on('connection', ws => {
           })).finish());
         });
       }
+    } else if (msg.flush) {
+      // TODO: flusing now instead of on every OT
+
+      ws.send(api.Command.encode(new api.Command({
+        channel: msg.channel,
+        ref: msg.ref,
+        session: sessionId,
+        ok: {}
+      })).finish());
     } else if (msg.remove) {
       fs.rm(msg.remove.path, err => {
         // TODO: handle errors
