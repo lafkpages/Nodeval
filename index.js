@@ -120,6 +120,14 @@ function startPty(chanId, ws, infoCallback) {
   });
 }
 
+function makeTimestamp(now = null) {
+  now = now || Date.now();
+  return {
+    seconds: Math.floor(now / 1000).toString(),
+    nanos: 0,
+  };
+}
+
 // Import previous file history
 const fileHistory = require('./.file-history.json');
 
@@ -672,10 +680,7 @@ wss.on('connection', (ws) => {
                     },
                   ],
                   crc32: crc32(data),
-                  comitted: {
-                    seconds: Math.floor(now / 1000).toString(),
-                    nanos: 0,
-                  },
+                  comitted: makeTimestamp(),
                   version: 1,
                   userId,
                 },
@@ -757,10 +762,7 @@ wss.on('connection', (ws) => {
               spookyVersion: newVersion,
               op: msg.ot.op,
               crc32: crc32(newFile.file),
-              comitted: {
-                seconds: Math.floor(now / 1000).toString(),
-                nanos: 0,
-              },
+              comitted: makeTimestamp(now),
               version: newVersion,
               userId,
             };
