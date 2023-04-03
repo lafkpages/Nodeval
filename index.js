@@ -1,4 +1,7 @@
 const os = require('os');
+const osUtils = require('os-utils');
+const { WebSocketServer } = require('ws');
+const { api } = require('@replit/protocol');
 const { WebSocketServer } = require('ws');
 const { api } = require('@replit/protocol');
 const { exec, spawn } = require('child_process');
@@ -313,18 +316,17 @@ wss.on('connection', (ws) => {
           ).finish()
         );
 
-        setTimeout(() => {
-          ws.send(
-            api.Command.encode(
-              new api.Command({
-                channel: msg.channel,
-                ref: msg.ref,
-                output: `${
-                  Date.now() * 1000000
-                }\n19746486204\n200000\n100000\n20770816\n2147483648\n3371548672\ntotal_cache 36864\ntotal_rss 17854464`,
-              })
-            ).finish()
-          );
+        osUtils.cpuUsage(cpuUsagePercent => {
+          const freeMemory = osUtils.freemem();
+          const totalMemory = osUtils.totalmem();
+          const memoryUsage = totalMemory - freeMemory;
+          const cpuTime = process.cpuUsage();
+
+          ws.send(api.Command.encode(new api.Command({
+            channel: msg.channel,
+            ref: msg.ref,
+            output: `${Date.now() * 1000000}\n${cpuTime.system * 1000}\n200000\n100000\n${memoryUsage}\n${totalMemory}\n${totalMemory}\ntotal_cache 36864\ntotal_rss ${totalMemory}`
+          })).finish());
 
           setTimeout(() => {
             ws.send(
@@ -336,21 +338,12 @@ wss.on('connection', (ws) => {
               ).finish()
             );
           }, 10);
-        }, 10);
-      } else if (
-        msg.exec.args[0] == 'bash' &&
-        msg.exec.args[1] == '-c' &&
-        msg.exec.args[2] ==
-          'cat /repl/stats/subvolume_usage_bytes /repl/stats/subvolume_total_bytes'
-      ) {
-        ws.send(
-          api.Command.encode(
-            new api.Command({
-              channel: msg.channel,
-              state: api.State.Running,
-            })
-          ).finish()
-        );
+        });
+      } else if (msg.exec.args[0] == 'bash' && msg.exec.args[1] == '-c' && msg.exec.args[2] == 'cat /repl/stats/subvolume_usage_bytes /repl/stats/subvolume_total_bytes') {
+        ws.send(api.Command.encode(new api.Command({
+          channel: msg.channel,
+          state: api.State.Running
+        })).finish());
 
         disk.check('.', (err, diskUsage) => {
           // TODO: handle errors
