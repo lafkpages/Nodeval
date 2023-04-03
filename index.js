@@ -4,7 +4,7 @@ const { WebSocketServer } = require('ws');
 const { api } = require('@replit/protocol');
 const { exec, spawn } = require('child_process');
 const { spawn: spawnPty } = require('node-pty');
-const { query, mutate, setSid } = require('replit-graphql');
+const { query } = require('replit-graphql');
 const { applyOTs } = require('./ot');
 const disk = require('diskusage');
 const fs = require('fs');
@@ -229,6 +229,35 @@ wss.on('connection', (ws) => {
                   channel: chanId,
                   ref: msg.ref,
                   otstatus: channels[chanId].otstatus,
+                })
+              ).finish()
+            );
+          }, 10);
+          break;
+
+        case 'presence':
+          setTimeout(() => {
+            ws.send(
+              api.Command.encode(
+                new api.Command({
+                  channel: chanId,
+                  session: sessionId,
+                  roster: {
+                    user: [
+                      {
+                        id: 1,
+                        name: 'amasad',
+                        session: 5
+                      }
+                    ],
+                    files: [
+                      {
+                        userId: 1,
+                        session: 5,
+                        timestamp: makeTimestamp()
+                      }
+                    ]
+                  }
                 })
               ).finish()
             );
