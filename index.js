@@ -119,7 +119,7 @@ function startPty(chanId, ws, infoCallback) {
         channels[chanId].processPtyDev = match[1];
       }
 
-      console.log('Spawned shell:', ptyDev);
+      console.log('Spawned shell:', channels[chanId].processPtyDev);
     }
   });
 
