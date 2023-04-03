@@ -263,17 +263,17 @@ wss.on('connection', (ws) => {
                       {
                         id: 1,
                         name: 'amasad',
-                        session: 5
-                      }
+                        session: 5,
+                      },
                     ],
                     files: [
                       {
                         userId: 1,
                         session: 5,
-                        timestamp: makeTimestamp()
-                      }
-                    ]
-                  }
+                        timestamp: makeTimestamp(),
+                      },
+                    ],
+                  },
                 })
               ).finish()
             );
