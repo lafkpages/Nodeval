@@ -19,5 +19,8 @@
     "replit-graphql": "^2.0.9",
     "toml": "^3.0.0",
     "ws": "^8.11.0"
+  },
+  "devDependencies": {
+    "prettier": "2.8.7"
   }
 }
