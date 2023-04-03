@@ -84,6 +84,8 @@ function escapeQuotes(str) {
 function startPty(chanId, ws, infoCallback) {
   const [replId, username, userId, replUrl] = infoCallback();
 
+  channels[chanId].processPtyDev = null;
+
   channels[chanId].process = spawnPty(shell, [], {
     name: 'xterm-256color',
     cols: 80,
@@ -101,15 +103,29 @@ function startPty(chanId, ws, infoCallback) {
   });
 
   channels[chanId].process.on('data', (output) => {
-    ws.send(
-      api.Command.encode(
-        new api.Command({
-          channel: chanId,
-          output,
-        })
-      ).finish()
-    );
+    if (channels[chanId].processPtyDev) {
+      ws.send(
+        api.Command.encode(
+          new api.Command({
+            channel: chanId,
+            output,
+          })
+        ).finish()
+      );
+    } else {
+      const match = output.match(/^ptyDev:(.+?):ptyDev/m);
+
+      if (match) {
+        channels[chanId].processPtyDev = match[1];
+      }
+
+      console.log('Spawned shell:', ptyDev);
+    }
   });
+
+  setTimeout(() => {
+    channels[chanId].process.write('echo -n "ptyDev:"`tty`":ptyDev"\r');
+  }, 10);
 
   channels[chanId].process.on('exit', () => {
     console.log('Shell exited, respawning...');
