@@ -1,0 +1,2 @@
+run = "echo Run command"
+entrypoint = "README.md"
