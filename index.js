@@ -10,6 +10,7 @@ const fs = require('fs');
 const dotenv = require('dotenv');
 const crc32 = require('crc/crc32');
 const { normalize: normalizePath } = require('path');
+const { parse: parseToml } = require('toml');
 
 dotenv.config();
 
@@ -53,6 +54,27 @@ try {
   fs.writeFileSync('.file-history.json', '{}', { flag: 'wx' });
 } catch {
 
+}
+
+// dotReplit config
+let dotReplit = {};
+
+setInterval(() => {
+  fs.readFile('.replit', 'utf-8', (err, data) => {
+    if (err) {
+      console.error('Error reading .replit:', err);
+      return;
+    }
+
+    dotReplit = parseToml(data);
+  });
+}, 5000);
+
+function escapeQuotes(str) {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, '\\\'')
+    .replace(/"/g, '\\"');
 }
 
 function startPty(chanId, ws, infoCallback) {
@@ -663,17 +685,24 @@ wss.on('connection', ws => {
         proc.write(msg.input);
       }
     } else if (msg.toolchainGetRequest) {
+      const runCommand = `sh -c '${
+        escapeQuotes(
+          dotReplit.run ||
+          'echo Run isn\'t configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button'
+        )
+      }`;
+
       ws.send(api.Command.encode(new api.Command({
         channel: msg.channel,
         ref: msg.ref,
         session: sessionId,
         toolchainGetResponse: {
           configs: {
-            entrypoint: 'README.md',
+            entrypoint: dotReplit.entrypoint || null,
             runs: [
               {
                 id: '.replit/run',
-                name: 'sh -c \'echo Run command from Nodeval\'',
+                name: runCommand,
                 fileTypeAttrs: {}
               }
             ]
