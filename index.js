@@ -316,17 +316,23 @@ wss.on('connection', (ws) => {
           ).finish()
         );
 
-        osUtils.cpuUsage(cpuUsagePercent => {
+        osUtils.cpuUsage((cpuUsagePercent) => {
           const freeMemory = osUtils.freemem();
           const totalMemory = osUtils.totalmem();
           const memoryUsage = totalMemory - freeMemory;
           const cpuTime = process.cpuUsage();
 
-          ws.send(api.Command.encode(new api.Command({
-            channel: msg.channel,
-            ref: msg.ref,
-            output: `${Date.now() * 1000000}\n${cpuTime.system * 1000}\n200000\n100000\n${memoryUsage}\n${totalMemory}\n${totalMemory}\ntotal_cache 36864\ntotal_rss ${totalMemory}`
-          })).finish());
+          ws.send(
+            api.Command.encode(
+              new api.Command({
+                channel: msg.channel,
+                ref: msg.ref,
+                output: `${Date.now() * 1000000}\n${
+                  cpuTime.system * 1000
+                }\n200000\n100000\n${memoryUsage}\n${totalMemory}\n${totalMemory}\ntotal_cache 36864\ntotal_rss ${totalMemory}`,
+              })
+            ).finish()
+          );
 
           setTimeout(() => {
             ws.send(
@@ -339,11 +345,20 @@ wss.on('connection', (ws) => {
             );
           }, 10);
         });
-      } else if (msg.exec.args[0] == 'bash' && msg.exec.args[1] == '-c' && msg.exec.args[2] == 'cat /repl/stats/subvolume_usage_bytes /repl/stats/subvolume_total_bytes') {
-        ws.send(api.Command.encode(new api.Command({
-          channel: msg.channel,
-          state: api.State.Running
-        })).finish());
+      } else if (
+        msg.exec.args[0] == 'bash' &&
+        msg.exec.args[1] == '-c' &&
+        msg.exec.args[2] ==
+          'cat /repl/stats/subvolume_usage_bytes /repl/stats/subvolume_total_bytes'
+      ) {
+        ws.send(
+          api.Command.encode(
+            new api.Command({
+              channel: msg.channel,
+              state: api.State.Running,
+            })
+          ).finish()
+        );
 
         disk.check('.', (err, diskUsage) => {
           // TODO: handle errors
