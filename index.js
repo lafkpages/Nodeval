@@ -2,7 +2,7 @@ const os = require('os');
 const osUtils = require('os-utils');
 const { WebSocketServer } = require('ws');
 const { api } = require('@replit/protocol');
-const { exec, spawn } = require('child_process');
+const { exec, spawn, execSync } = require('child_process');
 const { spawn: spawnPty } = require('node-pty');
 const { query } = require('replit-graphql');
 const { applyOTs } = require('./ot');
@@ -77,6 +77,19 @@ setInterval(() => {
   });
 }, 5000);
 
+// Get current TTY
+let currentTty = null;
+
+try {
+  currentTty = execSync('tty', {
+    stdio: ['inherit', 'pipe', 'pipe'],
+  })
+    .toString()
+    .trim();
+} catch (err) {
+  console.error('Error getting current TTY:', err);
+}
+
 function escapeQuotes(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
@@ -93,7 +106,8 @@ function startPty(chanId, ws, infoCallback) {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      NODEVAL_SHELL: '1',
+      IS_NODEVAL: '1',
+      NODEVAL_TTY: currentTty || '',
       PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]',
       REPL_ID: replId,
       REPL_OWNER: username,
