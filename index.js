@@ -690,7 +690,7 @@ wss.on('connection', ws => {
           dotReplit.run ||
           'echo Run isn\'t configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button'
         )
-      }`;
+      }'`;
 
       ws.send(api.Command.encode(new api.Command({
         channel: msg.channel,
