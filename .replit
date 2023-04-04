@@ -1,2 +1,2 @@
-run = "echo Run command"
+run = "echo Run command; sleep 10"
 entrypoint = "README.md"
