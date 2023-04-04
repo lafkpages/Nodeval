@@ -127,6 +127,7 @@ function startPty(chanId, ws, infoCallback) {
       ...process.env,
       IS_NODEVAL: '1',
       NODEVAL_TTY: currentTty || '',
+      NODEVAL_PID: process.pid,
       PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]',
       REPL_ID: replId,
       REPL_OWNER: username,
