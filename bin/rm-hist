@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const { normalize: normalizePath } = require('path');
+
+const fileHistoryPath = '.file-history.json';
+
+let file = process.argv[2];
+const prettyJson = process.argv[3] ? !!parseInt(process.argv[3]) : false;
+
+if (!file) {
+  console.error('Specify a file to remove.');
+  process.exit(2);
+}
+
+file = normalizePath(file);
+
+fs.rm(file, (err) => {
+  if (err) {
+    if (err.code == 'ENOENT') {
+      console.error(`rm-hist: ${file}: No such file or directory`);
+    } else {
+      console.error('rm-hist: error:', err);
+    }
+    process.exit(3);
+  }
+
+  fs.readFile(fileHistoryPath, 'utf-8', (err, fileHistory) => {
+    fileHistory = JSON.parse(fileHistory);
+
+    delete fileHistory[file];
+
+    const data = prettyJson
+      ? JSON.stringify(fileHistory, null, 2)
+      : JSON.stringify(fileHistory);
+
+    setTimeout(() => {
+      fs.writeFile(fileHistoryPath, data, 'utf-8', (err) => {
+        if (err) {
+          console.error('rm-hist: error saving file history:', err);
+          process.exit(4);
+        }
+
+        console.log('Removed from file history');
+      });
+    }, 1000);
+  });
+});
