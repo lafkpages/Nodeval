@@ -66,6 +66,8 @@ try {
 // dotReplit config
 let dotReplit = {};
 
+const dotReplitDefaultRunCommand = 'echo Run isn\'t configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button';
+
 setInterval(() => {
   fs.readFile('.replit', 'utf-8', (err, data) => {
     if (err) {
@@ -74,6 +76,20 @@ setInterval(() => {
     }
 
     dotReplit = parseToml(data);
+
+    dotReplit.fullRunCommand = `sh -c '${escapeQuotes(
+      dotReplit.run ||
+        dotReplitDefaultRunCommand
+    )}'`;
+
+    dotReplit.fullRunCommandArgs = [
+      'sh',
+      '-c',
+      `'${escapeQuotes(
+        dotReplit.run ||
+          dotReplitDefaultRunCommand
+      )}'`,
+    ];
   });
 }, 5000);
 
@@ -89,6 +105,9 @@ try {
 } catch (err) {
   console.error('Error getting current TTY:', err);
 }
+
+// ANSI codes to clear the screen
+const ansiClear = '\033[H\033[J\r';
 
 function escapeQuotes(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
@@ -126,6 +145,17 @@ function startPty(chanId, ws, infoCallback) {
           })
         ).finish()
       );
+
+      if (channels[chanId].openChan.service == 'shellrun2') {
+        ws.send(
+          api.Command.encode(
+            new api.Command({
+              channel: chanId,
+              record: output,
+            })
+          ).finish()
+        );
+      }
     } else {
       const match = output.match(/^ptyDev:(.+?):ptyDev/m);
 
@@ -990,11 +1020,6 @@ wss.on('connection', (ws) => {
         proc.write(msg.input);
       }
     } else if (msg.toolchainGetRequest) {
-      const runCommand = `sh -c '${escapeQuotes(
-        dotReplit.run ||
-          "echo Run isn't configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button"
-      )}'`;
-
       ws.send(
         api.Command.encode(
           new api.Command({
@@ -1007,7 +1032,7 @@ wss.on('connection', (ws) => {
                 runs: [
                   {
                     id: '.replit/run',
-                    name: runCommand,
+                    name: dotReplit.fullRunCommand,
                     fileTypeAttrs: {},
                   },
                 ],
@@ -1027,6 +1052,57 @@ wss.on('connection', (ws) => {
           })
         ).finish()
       );
+    } else if (msg.runConfigGetRequest) {
+      ws.send(
+        api.Command.encode(
+          new api.Command({
+            channel: msg.channel,
+            ref: msg.ref,
+            session: sessionId,
+            runConfigGetResponse: {
+              run: {
+                run: {
+                  args: dotReplit.fullRunCommandArgs,
+                },
+              },
+            },
+          })
+        ).finish()
+      );
+    } else if (msg.runMain) {
+      console.log('Running');
+
+      ws.send(
+        api.Command.encode(
+          new api.Command({
+            channel: msg.channel,
+            state: api.State.Running,
+          })
+        ).finish()
+      );
+
+      channels[msg.channel].process.kill();
+
+      setTimeout(() => {
+        channels[msg.channel].process.on('exit', () => {
+          console.log('Finished running');
+
+          ws.send(
+            api.Command.encode(
+              new api.Command({
+                channel: msg.channel,
+                state: api.State.Stopped,
+              })
+            ).finish()
+          );
+        });
+
+        channels[msg.channel].process.write(
+          `${ansiClear}${dotReplit.fullRunCommand}\rexit\r`
+        );
+      }, 100);
+    } else if (msg.clear) {
+      channels[msg.channel].process.write(ansiClear);
     } else {
       console.log(msg);
     }
