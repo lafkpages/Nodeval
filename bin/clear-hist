@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+
+console.log('Clearing in 3s');
+
+setTimeout(() => {
+  fs.writeFile('.file-history.json', '{}', 'ascii', (err) => {
+    if (err) {
+      console.error('clear-hist: error clearing history:', err);
+      process.exit(3);
+    }
+  });
+}, 3000);
