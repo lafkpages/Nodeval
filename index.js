@@ -611,16 +611,31 @@ wss.on('connection', (ws) => {
             channels[msg.channel].subscriptions[file] = fs.watch(
               file,
               (e, filename) => {
-                ws.send(
-                  api.Command.encode(
-                    new api.Command({
-                      channel: msg.channel,
-                      ref: msg.ref,
-                      ok: {},
-                    })
-                  ).finish()
-                );
+                if (e == 'rename') {
+                  ws.send(
+                    api.Command.encode(
+                      new api.Command({
+                        channel: msg.channel,
+                        fileEvent: {
+                          file: {
+                            path: file,
+                          },
+                        },
+                      })
+                    ).finish()
+                  );
+                }
               }
+            );
+
+            ws.send(
+              api.Command.encode(
+                new api.Command({
+                  channel: msg.channel,
+                  ref: msg.ref,
+                  ok: {},
+                })
+              ).finish()
             );
           } catch (err) {
             ws.send(
