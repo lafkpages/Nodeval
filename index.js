@@ -66,7 +66,8 @@ try {
 // dotReplit config
 let dotReplit = {};
 
-const dotReplitDefaultRunCommand = 'echo Run isn\'t configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button';
+const dotReplitDefaultRunCommand =
+  "echo Run isn't configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button";
 
 setInterval(() => {
   fs.readFile('.replit', 'utf-8', (err, data) => {
@@ -78,17 +79,13 @@ setInterval(() => {
     dotReplit = parseToml(data);
 
     dotReplit.fullRunCommand = `sh -c '${escapeQuotes(
-      dotReplit.run ||
-        dotReplitDefaultRunCommand
+      dotReplit.run || dotReplitDefaultRunCommand
     )}'`;
 
     dotReplit.fullRunCommandArgs = [
       'sh',
       '-c',
-      `'${escapeQuotes(
-        dotReplit.run ||
-          dotReplitDefaultRunCommand
-      )}'`,
+      `'${escapeQuotes(dotReplit.run || dotReplitDefaultRunCommand)}'`,
     ];
   });
 }, 5000);
@@ -118,6 +115,10 @@ function startPty(chanId, ws, infoCallback) {
 
   channels[chanId].processPtyDev = null;
 
+  if (typeof channels[chanId].showOutput != 'boolean') {
+    channels[chanId].showOutput = true;
+  }
+
   channels[chanId].process = spawnPty(shell, [], {
     name: 'xterm-256color',
     cols: 80,
@@ -139,24 +140,26 @@ function startPty(chanId, ws, infoCallback) {
 
   channels[chanId].process.on('data', (output) => {
     if (channels[chanId].processPtyDev) {
-      ws.send(
-        api.Command.encode(
-          new api.Command({
-            channel: chanId,
-            output,
-          })
-        ).finish()
-      );
-
-      if (channels[chanId].openChan.service == 'shellrun2') {
+      if (channels[chanId].showOutput) {
         ws.send(
           api.Command.encode(
             new api.Command({
               channel: chanId,
-              record: output,
+              output,
             })
           ).finish()
         );
+
+        if (channels[chanId].openChan.service == 'shellrun2') {
+          ws.send(
+            api.Command.encode(
+              new api.Command({
+                channel: chanId,
+                record: output,
+              })
+            ).finish()
+          );
+        }
       }
     } else {
       const match = output.match(/^ptyDev:(.+?):ptyDev/m);
@@ -1084,6 +1087,7 @@ wss.on('connection', (ws) => {
       );
 
       channels[msg.channel].process.kill();
+      channels[msg.channel].showOutput = false;
 
       setTimeout(() => {
         channels[msg.channel].process.on('exit', () => {
@@ -1102,6 +1106,19 @@ wss.on('connection', (ws) => {
         channels[msg.channel].process.write(
           `${ansiClear}${dotReplit.fullRunCommand}\rexit\r`
         );
+
+        ws.send(
+          api.Command.encode(
+            new api.Command({
+              channel: msg.channel,
+              output: `${dotReplit.run || dotReplitDefaultRunCommand}\r`,
+            })
+          ).finish()
+        );
+
+        setTimeout(() => {
+          channels[msg.channel].showOutput = true;
+        }, 10);
       }, 100);
     } else if (msg.clear) {
       channels[msg.channel].process.write(ansiClear);
