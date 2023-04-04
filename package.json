@@ -18,6 +18,7 @@
     "node-pty": "^0.10.1",
     "os-utils": "^0.0.14",
     "replit-graphql": "^2.0.9",
+    "safe-logging-replit": "^1.2.4",
     "toml": "^3.0.0",
     "ws": "^8.11.0"
   },
