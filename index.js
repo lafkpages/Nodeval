@@ -1,3 +1,6 @@
+const { makeConsoleSafe } = require('safe-logging-replit');
+makeConsoleSafe(console);
+
 const os = require('os');
 const osUtils = require('os-utils');
 const { WebSocketServer } = require('ws');
@@ -1138,7 +1141,7 @@ wss.on('connection', (ws) => {
     } else if (msg.clear) {
       channels[msg.channel].process.write(ansiClear);
     } else {
-      console.log(msg);
+      console.dir(msg);
     }
   });
 
