@@ -57,7 +57,30 @@ function verifyOTs(stale, latest, ots, err = true) {
   }
 }
 
+function diffsToOTs(diffs) {
+  const ots = [];
+
+  for (const diff of diffs) {
+    if (diff.added) {
+      ots.push({
+        insert: diff.value,
+      });
+    } else if (diff.removed) {
+      ots.push({
+        delete: diff.count,
+      });
+    } else {
+      ots.push({
+        skip: diff.count,
+      });
+    }
+  }
+
+  return ots;
+}
+
 module.exports = {
   applyOTs,
   verifyOTs,
+  diffsToOTs,
 };
