@@ -911,7 +911,7 @@ wss.on('connection', (ws) => {
                     op: ots,
                     crc32: crc32(newContents),
                     comitted: makeTimestamp(now),
-                    version: newVersion
+                    version: newVersion,
                   };
 
                   // Send to client
