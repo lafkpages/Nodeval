@@ -9,13 +9,13 @@
   },
   "pkg": {
     "assets": [
-      "bin/*"
+      
     ],
     "targets": [
       "latest-macos-x64",
       "latest-win-x64"
     ],
-    "output": "dist"
+    "outputPath": "dist"
   },
   "keywords": [],
   "author": "LuisAFK",
