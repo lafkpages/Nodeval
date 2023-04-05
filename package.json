@@ -8,9 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "pkg": {
-    "assets": [
-      
-    ],
+    "assets": [],
     "targets": [
       "latest-macos-x64",
       "latest-win-x64",
