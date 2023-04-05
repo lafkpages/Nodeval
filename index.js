@@ -134,6 +134,7 @@ function startPty(chanId, ws, infoCallback) {
     cwd: process.cwd(),
     env: {
       ...process.env,
+      ...dotReplit.env,
       PATH: `${__dirname}/bin:${process.env.PATH}`,
       IS_NODEVAL: '1',
       NODEVAL_TTY: currentTty || '',

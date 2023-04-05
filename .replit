@@ -1,2 +1,5 @@
 run = "echo Run command; sleep 10"
 entrypoint = "README.md"
+
+[env]
+NODEVAL_DOTREPLIT_ENV_TEST="it works"
