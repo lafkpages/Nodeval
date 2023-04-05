@@ -13,7 +13,8 @@
     ],
     "targets": [
       "latest-macos-x64",
-      "latest-win-x64"
+      "latest-win-x64",
+      "latest-linux-x64"
     ],
     "outputPath": "dist"
   },
