@@ -8,13 +8,14 @@ const { api } = require('@replit/protocol');
 const { exec, spawn, execSync } = require('child_process');
 const { spawn: spawnPty } = require('node-pty');
 const { query } = require('replit-graphql');
-const { applyOTs } = require('./ot');
+const { applyOTs, diffsToOTs } = require('./ot');
 const disk = require('diskusage');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const crc32 = require('crc/crc32');
 const { normalize: normalizePath } = require('path');
 const { parse: parseToml } = require('toml');
+const { diffChars } = require('diff');
 
 dotenv.config();
 
@@ -108,6 +109,10 @@ try {
 
 // ANSI codes to clear the screen
 const ansiClear = '\033[H\033[J\r';
+
+function randomStr() {
+  return Math.random().toString(36).substring(2);
+}
 
 function escapeQuotes(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
@@ -284,6 +289,7 @@ wss.on('connection', (ws) => {
           break;
 
         case 'ot':
+          channels[chanId].subscriptions = {};
           channels[chanId].otstatus = {
             content: '',
             version: 0,
@@ -346,6 +352,18 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.closeChan) {
+      switch (msg._service) {
+        case 'ot':
+          if (channels[msg.closeChan.id].subscriptions) {
+            for (const [path, watcher] of Object.entries(
+              channels[msg.closeChan.id].subscriptions
+            )) {
+              watcher.close();
+            }
+          }
+          break;
+      }
+
       // TODO: use msg.closeChan.action (DISCONNECT|CLOSE|TRY_CLOSE)
       delete channels[msg.closeChan.id];
 
@@ -831,6 +849,88 @@ wss.on('connection', (ws) => {
               ).finish()
             );
           }, 10);
+
+          let watcher = null;
+          watcher = fs.watch(path, (e, filename) => {
+            if (!channels[msg.channel]) {
+              watcher.close();
+              return;
+            }
+
+            if (e == 'change') {
+              // Check if change is because of flushing OTs
+              if (!channels[msg.channel].flushing) {
+                const cursorId = randomStr();
+                const cursor = {
+                  position: 0,
+                  selectionStart: 0,
+                  selectionEnd: 0,
+                  user: {
+                    name: 'replit',
+                  },
+                  id: cursorId,
+                };
+
+                channels[msg.channel].otstatus.cursors.push(cursor);
+
+                ws.send(
+                  api.Command.encode(
+                    new api.Command({
+                      channel: msg.channel,
+                      otNewCursor: cursor,
+                    })
+                  ).finish()
+                );
+
+                // Get old file contents
+                let oldContents = '';
+
+                for (const version of fileHistory[path].versions) {
+                  oldContents = applyOTs(oldContents, version.op).file;
+                }
+
+                // TODO: iterate over versions and apply individually
+
+                // Get new file contents
+                fs.readFile(path, 'utf-8', (err, newContents) => {
+                  // TODO: handle errors
+
+                  // Check if there were changes
+                  if (oldContents == newContents) {
+                    return;
+                  }
+
+                  // Get file changes as OTs
+                  const ots = diffsToOTs(diffChars(oldContents, newContents));
+
+                  const newVersion = fileHistory[path].versions.length + 1;
+
+                  // Construct OT packet
+                  const packet = {
+                    spookyVersion: newVersion,
+                    op: ots,
+                    crc32: crc32(newContents),
+                    comitted: makeTimestamp(now),
+                    version: newVersion
+                  };
+
+                  // Send to client
+                  ws.send(
+                    api.Command.encode(
+                      new api.Command({
+                        channel: msg.channel,
+                        ot: packet,
+                      })
+                    ).finish()
+                  );
+
+                  // Save to file history
+                  fileHistory[path].versions.push(packet);
+                });
+              }
+            }
+          });
+          channels[msg.channel].subscriptions[path] = watcher;
         });
       }
     } else if (msg.otNewCursor) {
@@ -890,10 +990,20 @@ wss.on('connection', (ws) => {
               ).finish()
             );
 
+            // Prevent the watch file handler from
+            // otLinkFile from firing
+            channels[msg.channel].flushing = true;
+
             fs.writeFile(file, newFile.file, 'utf-8', (err) => {
               // TODO: handle errors
               // TODO: only flush when needed
               console.debug('Flushed OTs');
+
+              setTimeout(() => {
+                if (channels[msg.channel]) {
+                  channels[msg.channel].flushing = false;
+                }
+              }, 100);
             });
 
             setTimeout(() => {
