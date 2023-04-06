@@ -73,26 +73,42 @@ let dotReplit = {};
 const dotReplitDefaultRunCommand =
   "echo Run isn't configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button";
 
-setInterval(() => {
-  fs.readFile('.replit', 'utf-8', (err, data) => {
-    if (err) {
-      console.error('Error reading .replit:', err);
-      return;
-    }
+function loadDotReplit() {
+  return new Promise((resolve, reject) => {
+    fs.readFile('.replit', 'utf-8', (err, data) => {
+      if (err) {
+        console.error('Error reading .replit:', err);
+        reject(err);
+        return;
+      }
 
-    dotReplit = parseToml(data);
+      try {
+        dotReplit = parseToml(data);
+      } catch (err) {
+        console.error('Error parsing .replit:', err);
+        reject(err);
+        return;
+      }
 
-    dotReplit.fullRunCommand = `sh -c '${escapeQuotes(
-      dotReplit.run || dotReplitDefaultRunCommand
-    )}'`;
+      dotReplit.fullRunCommand = `sh -c '${escapeQuotes(
+        dotReplit.run || dotReplitDefaultRunCommand
+      )}'`;
 
-    dotReplit.fullRunCommandArgs = [
-      'sh',
-      '-c',
-      `'${escapeQuotes(dotReplit.run || dotReplitDefaultRunCommand)}'`,
-    ];
+      dotReplit.fullRunCommandArgs = [
+        'sh',
+        '-c',
+        `'${escapeQuotes(dotReplit.run || dotReplitDefaultRunCommand)}'`,
+      ];
+
+      resolve(dotReplit);
+    });
   });
-}, 5000);
+}
+
+loadDotReplit().then(() => {
+  console.debug('Loaded dotReplit');
+});
+setInterval(loadDotReplit, 5000);
 
 // Get current TTY
 let currentTty = null;
