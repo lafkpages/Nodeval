@@ -1266,6 +1266,17 @@ wss.on('connection', (ws) => {
     api.Command.encode(
       new api.Command({
         channel: 0,
+        bootStatus: {
+          stage: api.BootStatus.Stage.COMPLETE
+        },
+      })
+    ).finish()
+  );
+
+  ws.send(
+    api.Command.encode(
+      new api.Command({
+        channel: 0,
         toast: { text: 'Connecting to Nodeval... By @LuisAFK' },
       })
     ).finish()
