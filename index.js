@@ -1267,7 +1267,7 @@ wss.on('connection', (ws) => {
       new api.Command({
         channel: 0,
         bootStatus: {
-          stage: api.BootStatus.Stage.COMPLETE
+          stage: api.BootStatus.Stage.COMPLETE,
         },
       })
     ).finish()
