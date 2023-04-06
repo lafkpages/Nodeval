@@ -1267,6 +1267,31 @@ wss.on('connection', (ws) => {
           })
         ).finish()
       );
+    } else if (msg.dotReplitGetRequest) {
+      ws.send(
+        api.Command.encode(
+          new api.Command({
+            channel: msg.channel,
+            ref: msg.ref,
+            session: sessionId,
+            dotReplitGetResponse: {
+              dotReplit: {
+                ...dotReplit,
+                run: {
+                  args: dotReplit.fullRunCommandArgs,
+                },
+                orderedEnv:
+                  typeof dotReplit.env == 'object'
+                    ? Object.entries(dotReplit.env).map((entry) => ({
+                        key: entry[0],
+                        value: entry[1],
+                      }))
+                    : null,
+              },
+            },
+          })
+        ).finish()
+      );
     } else if (msg.runMain) {
       console.log('Running');
 
