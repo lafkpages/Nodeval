@@ -16,6 +16,7 @@ const crc32 = require('crc/crc32');
 const { normalize: normalizePath } = require('path');
 const { parse: parseToml } = require('toml');
 const { diffChars } = require('diff');
+const minimatch = require('minimatch');
 
 dotenv.config();
 
@@ -658,12 +659,32 @@ wss.on('connection', (ws) => {
                 ref: msg.ref,
                 files: {
                   files:
-                    files?.map((file) => ({
-                      path: file.name,
-                      type: file.isDirectory()
-                        ? api.File.Type.DIRECTORY
-                        : api.File.Type.REGULAR,
-                    })) || [],
+                    files
+                      ?.filter((file) => {
+                        if (!dotReplit?.nodeval?.inaccessibleFiles) {
+                          return true;
+                        }
+
+                        let matched = false;
+                        for (const glob of dotReplit.nodeval
+                          .inaccessibleFiles) {
+                          matched = minimatch(file.name, glob, {
+                            matchBase: true,
+                          });
+
+                          if (matched) {
+                            break;
+                          }
+                        }
+
+                        return !matched;
+                      })
+                      .map((file) => ({
+                        path: file.name,
+                        type: file.isDirectory()
+                          ? api.File.Type.DIRECTORY
+                          : api.File.Type.REGULAR,
+                      })) || [],
                 },
               })
             ).finish()
