@@ -339,6 +339,7 @@ wss.on('connection', (ws) => {
                       session: entry[0],
                     })),
                     files: Object.entries(sessions).map((entry) => ({
+                      file: entry[1].activeFile,
                       userId: entry[1].userId,
                       session: entry[0],
                       timestamp: makeTimestamp(),
