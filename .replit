@@ -7,4 +7,4 @@ NODEVAL_DOTREPLIT_ENV_TEST="it works"
 
 [nodeval]
 connectToast = "Welcome to Nodeval"
-inaccessibleFiles = [ ".env", ".file-history.json" ]
+inaccessibleFiles = [ ".DS_Store", ".env", ".file-history.json" ]
