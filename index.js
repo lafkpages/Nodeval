@@ -1,6 +1,7 @@
 const { makeConsoleSafe } = require('safe-logging-replit');
 makeConsoleSafe(console);
 
+const package = require('./package.json');
 const os = require('os');
 const osUtils = require('os-utils');
 const { WebSocketServer } = require('ws');
@@ -157,7 +158,7 @@ function startPty(sessionId, chanId, ws, infoCallback) {
       NODEVAL_TTY: currentTty || '',
       NODEVAL_PID: process.pid,
       GOVAL_SESSION: sessionId,
-      GOVAL_VERSION: 'nodeval-1.0.0',
+      GOVAL_VERSION: `${package.name}-${package.version}`,
       PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]',
       REPL_ID: replId,
       REPL_OWNER: username,
