@@ -52,9 +52,9 @@ process.on('uncaughtException', (err) => {
 
 const wss = new WebSocketServer({ port });
 
-const channels = {};
-let lastChanId = 0;
 let lastSessId = 1;
+let replId = nodevalReplId;
+let replUrl = null;
 
 // Create .env
 fs.writeFile('.env', '', { flag: 'wx' }, () => {});
@@ -118,8 +118,9 @@ function escapeQuotes(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
-function startPty(chanId, ws, infoCallback) {
+function startPty(sessionId, chanId, ws, infoCallback) {
   const [replId, username, userId, replUrl] = infoCallback();
+  const channels = sessions[sessionId].channels;
 
   channels[chanId].processPtyDev = null;
 
@@ -203,16 +204,27 @@ function makeTimestamp(now = null) {
 // Import previous file history
 const fileHistory = require('./.file-history.json');
 
+// Session to WS map
+const sessions = {};
+
 wss.on('connection', (ws) => {
   ws.isAlive = true;
 
   console.log('Client connecting...');
 
-  let replId = null;
-  let replUrl = null;
+  const channels = {};
+  let lastChanId = 0;
+
   let userId = null;
   let username = null;
   const sessionId = ++lastSessId;
+
+  sessions[sessionId] = {
+    ws,
+    channels,
+    userId,
+    username,
+  };
 
   ws.onDisconnected = () => {
     console.log(
@@ -222,8 +234,7 @@ wss.on('connection', (ws) => {
       sessionId
     );
 
-    // Close all channels if no one else is here
-    // TODO
+    delete sessions[sessionId];
   };
 
   ws.on('close', ws.onDisconnected);
@@ -270,7 +281,7 @@ wss.on('connection', (ws) => {
 
         case 'shell':
         case 'shellrun2':
-          startPty(chanId, ws, () => {
+          startPty(sessionId, chanId, ws, () => {
             return [replId, username, userId, replUrl];
           });
 
@@ -1251,6 +1262,18 @@ wss.on('connection', (ws) => {
       }, 100);
     } else if (msg.clear) {
       channels[msg.channel].process.write(ansiClear);
+    } else if (msg.chatMessage) {
+      for (const { ws: wsIter } of Object.values(sessions)) {
+        wsIter.send(
+          api.Command.encode(
+            new api.Command({
+              channel: msg.channel,
+              session: -sessionId,
+              chatMessage: msg.chatMessage,
+            })
+          ).finish()
+        );
+      }
     } else {
       console.dir(msg);
     }
