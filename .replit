@@ -1,9 +1,10 @@
 run = "echo Run command; sleep 10"
 entrypoint = "README.md"
-hidden = [ ".DS_Store", ".file-history.json", ".vscode" ]
+hidden = [ ".DS_Store", ".file-history.json", ".vscode", ".env" ]
 
 [env]
 NODEVAL_DOTREPLIT_ENV_TEST="it works"
 
 [nodeval]
 connectToast = "Welcome to Nodeval"
+inaccessibleFiles = [ ".env", ".file-history.json" ]
