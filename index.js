@@ -1279,7 +1279,7 @@ wss.on('connection', (ws) => {
         channel: 0,
         toast: {
           text:
-            dotReplit.nodeval.connectToast ||
+            dotReplit?.nodeval?.connectToast ||
             'Connecting to Nodeval... By @LuisAFK',
         },
       })
