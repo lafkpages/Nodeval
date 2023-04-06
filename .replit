@@ -3,3 +3,6 @@ entrypoint = "README.md"
 
 [env]
 NODEVAL_DOTREPLIT_ENV_TEST="it works"
+
+[nodeval]
+connectToast = "Welcome to Nodeval"

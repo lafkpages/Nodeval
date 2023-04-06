@@ -1277,7 +1277,11 @@ wss.on('connection', (ws) => {
     api.Command.encode(
       new api.Command({
         channel: 0,
-        toast: { text: 'Connecting to Nodeval... By @LuisAFK' },
+        toast: {
+          text:
+            dotReplit.nodeval.connectToast ||
+            'Connecting to Nodeval... By @LuisAFK',
+        },
       })
     ).finish()
   );
