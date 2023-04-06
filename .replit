@@ -1,6 +1,6 @@
 run = "echo Run command; sleep 10"
 entrypoint = "README.md"
-hidden = [ ".DS_Store", ".file-history", ".vscode" ]
+hidden = [ ".DS_Store", ".file-history.json", ".vscode" ]
 
 [env]
 NODEVAL_DOTREPLIT_ENV_TEST="it works"
