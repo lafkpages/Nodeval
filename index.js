@@ -219,11 +219,15 @@ wss.on('connection', (ws) => {
   let username = null;
   const sessionId = ++lastSessId;
 
+  let activeFile = null;
+  let sentJoinEvent = false;
+
   sessions[sessionId] = {
     ws,
     channels,
     userId,
     username,
+    activeFile,
   };
 
   ws.onDisconnected = () => {
@@ -329,20 +333,16 @@ wss.on('connection', (ws) => {
                   channel: chanId,
                   session: sessionId,
                   roster: {
-                    user: [
-                      {
-                        id: 1,
-                        name: 'amasad',
-                        session: 5,
-                      },
-                    ],
-                    files: [
-                      {
-                        userId: 1,
-                        session: 5,
-                        timestamp: makeTimestamp(),
-                      },
-                    ],
+                    user: Object.entries(sessions).map((entry) => ({
+                      id: entry[1].userId,
+                      name: entry[1].username,
+                      session: entry[0],
+                    })),
+                    files: Object.entries(sessions).map((entry) => ({
+                      userId: entry[1].userId,
+                      session: entry[0],
+                      timestamp: makeTimestamp(),
+                    })),
                   },
                 })
               ).finish()
@@ -421,6 +421,33 @@ wss.on('connection', (ws) => {
             `aka "@${username}", session ID`,
             sessionId
           );
+
+          if (!sentJoinEvent) {
+            sentJoinEvent = true;
+
+            // Send join event to all other sessions
+            for (const { channels, ws: wsIter } of Object.values(sessions)) {
+              for (const [chanId, channel] of Object.entries(channels)) {
+                if (channel.openChan.service != 'presence') {
+                  continue;
+                }
+
+                wsIter.send(
+                  api.Command.encode(
+                    new api.Command({
+                      channel: chanId,
+                      session: -sessionId,
+                      join: {
+                        id: userId,
+                        session: sessionId,
+                        name: username,
+                      },
+                    })
+                  ).finish()
+                );
+              }
+            }
+          }
         });
       } else if (
         msg.userEvent.eventName == 'user:run:output' ||
@@ -694,13 +721,36 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.openFile) {
-      console.debug(
-        'User',
-        username,
-        'opened file:',
-        msg.openFile.file,
-        '(presence)'
-      );
+      const path = msg.openFile.file ? normalizePath(msg.openFile.file) : null;
+
+      activeFile = path;
+
+      console.debug('User', username, 'opened file:', path, '(presence)');
+
+      const timestamp = makeTimestamp();
+
+      for (const { channels, ws: wsIter } of Object.values(sessions)) {
+        for (const [chanId, channel] of Object.entries(channels)) {
+          if (channel.openChan.service != 'presence') {
+            continue;
+          }
+
+          wsIter.send(
+            api.Command.encode(
+              new api.Command({
+                channel: chanId,
+                session: -sessionId,
+                fileOpened: {
+                  file: activeFile,
+                  userId,
+                  session: sessionId,
+                  timestamp,
+                },
+              })
+            ).finish()
+          );
+        }
+      }
     } else if (/*msg.otLinkFile?.file.path || */ msg.read) {
       const file = msg.otLinkFile?.file.path || msg.read.path;
 
