@@ -725,6 +725,7 @@ wss.on('connection', (ws) => {
       const path = msg.openFile.file ? normalizePath(msg.openFile.file) : null;
 
       activeFile = path;
+      sessions[sessionId].activeFile = activeFile;
 
       console.debug('User', username, 'opened file:', path, '(presence)');
 
