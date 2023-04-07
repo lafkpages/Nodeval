@@ -258,6 +258,29 @@ wss.on('connection', (ws) => {
     );
 
     delete sessions[sessionId];
+
+    // Send leave event to all other sessions
+    for (const { channels, ws: wsIter } of Object.values(sessions)) {
+      for (const [chanId, channel] of Object.entries(channels)) {
+        if (channel.openChan.service != 'presence') {
+          continue;
+        }
+
+        wsIter.send(
+          api.Command.encode(
+            new api.Command({
+              channel: chanId,
+              session: -sessionId,
+              part: {
+                id: userId,
+                session: sessionId,
+                name: username,
+              },
+            })
+          ).finish()
+        );
+      }
+    }
   };
 
   ws.on('close', ws.onDisconnected);
@@ -427,11 +450,14 @@ wss.on('connection', (ws) => {
         replUrl = msg.userEvent.eventData.fields.url.stringValue;
         userId = msg.userEvent.eventData.fields.userId.numberValue;
 
+        sessions[sessionId].userId = userId;
+
         // Get username
         query('query user($id: Int!) { user(id: $id) { username } }', {
           id: userId,
         }).then((res) => {
           username = res.data.user.username;
+          sessions[sessionId].username = username;
 
           console.log(
             'Client is',
@@ -792,6 +818,38 @@ wss.on('connection', (ws) => {
           );
         }
       }
+    } else if (msg.followUser) {
+      console.debug(
+        `@${username} following @${sessions[msg.followUser.session].username}`
+      );
+      sessions[msg.followUser.session].ws.send(
+        api.Command.encode(
+          new api.Command({
+            channel: msg.channel,
+            session: msg.followUser.session,
+            followUser: {
+              session: sessionId,
+            },
+          })
+        ).finish()
+      );
+    } else if (msg.unfollowUser) {
+      console.debug(
+        `@${username} unfollowing @${
+          sessions[msg.unfollowUser.session].username
+        }`
+      );
+      sessions[msg.unfollowUser.session].ws.send(
+        api.Command.encode(
+          new api.Command({
+            channel: msg.channel,
+            session: msg.unfollowUser.session,
+            unfollowUser: {
+              session: sessionId,
+            },
+          })
+        ).finish()
+      );
     } else if (/*msg.otLinkFile?.file.path || */ msg.read) {
       const file = msg.otLinkFile?.file.path || msg.read.path;
 
