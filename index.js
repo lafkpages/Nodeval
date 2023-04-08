@@ -454,7 +454,9 @@ wss.on('connection', (ws) => {
 
         // Get username
         query('query user($id: Int!) { user(id: $id) { username } }', {
-          id: userId,
+          variables: {
+            id: userId,
+          },
         }).then((res) => {
           username = res.data.user.username;
           sessions[sessionId].username = username;
