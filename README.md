@@ -13,13 +13,13 @@
 ![PRs](https://img.shields.io/github/issues-pr/lafkpages/Nodeval)
 ![Releases](https://img.shields.io/github/v/release/lafkpages/Nodeval?include_prereleases)
 
-Nodeval is a blazingly fast and bleeding edge Node.js script that allows you to connect your Replit repl with your own computer. 
+Nodeval is a blazingly fast and bleeding edge Node.js script that allows you to connect your Replit Repl with your own computer. 
 
 ## 🔥Features
 
 - 📁 Local file editing
 - 🖥️ Command line access
-- 🌐 Access your Replit repl from your own computer
+- 🌐 Access your Replit Repl from your own computer
 - 🚀 Blazing fast performance
 - 🆕 Bleeding edge technology
 
