@@ -18,6 +18,7 @@ const { normalize: normalizePath } = require('path');
 const { parse: parseToml } = require('toml');
 const { diffChars } = require('diff');
 const { minimatch } = require('minimatch');
+const { checkCommandsInteractive } = require('./util/checkCommand');
 
 dotenv.config();
 
@@ -1500,6 +1501,13 @@ const checkDisconnectedClientsInterval = setInterval(() => {
 wss.on('close', () => {
   clearInterval(checkDisconnectedClientsInterval);
   console.log('Closing WebSocket server');
+});
+
+checkCommandsInteractive({
+  rg: {
+    required: false,
+    name: 'RipGrep',
+  },
 });
 
 setTimeout(() => {
