@@ -1,6 +1,7 @@
 const { makeConsoleSafe } = require('safe-logging-replit');
 makeConsoleSafe(console);
 
+const { checkCommandsInteractive } = require('./util/checkCommand');
 const package = require('./package.json');
 const os = require('os');
 const osUtils = require('os-utils');
@@ -1500,6 +1501,14 @@ const checkDisconnectedClientsInterval = setInterval(() => {
 wss.on('close', () => {
   clearInterval(checkDisconnectedClientsInterval);
   console.log('Closing WebSocket server');
+});
+
+// Check that all needed utilities are installed
+checkCommandsInteractive({
+  rg: {
+    required: false,
+    name: 'RipGrep',
+  },
 });
 
 setTimeout(() => {
