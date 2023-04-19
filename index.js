@@ -17,7 +17,7 @@ const crc32 = require('crc/crc32');
 const { normalize: normalizePath } = require('path');
 const { parse: parseToml } = require('toml');
 const { diffChars } = require('diff');
-const minimatch = require('minimatch');
+const { minimatch } = require('minimatch');
 
 dotenv.config();
 
