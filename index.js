@@ -63,7 +63,19 @@ let replUrl = null;
 fs.writeFile('.env', '', { flag: 'wx' }, () => {});
 
 // Create .replit
-fs.writeFile('.replit', '', { flag: 'wx' }, () => {});
+try {
+  fs.writeFileSync(
+    '.replit',
+    `
+run = "echo Hello, World!"
+hidden = [ ".DS_Store", ".file-history.json", ".vscode", ".env" ]
+
+[nodeval]
+inaccessibleFiles = [ ".DS_Store", ".env", ".file-history.json" ]
+`,
+    { encoding: 'utf-8', flag: 'wx' }
+  );
+} catch {}
 
 // Create file history file
 try {
