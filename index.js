@@ -14,7 +14,7 @@ const disk = require('diskusage');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const crc32 = require('crc/crc32');
-const { normalize: normalizePath } = require('path');
+const { normalize: normalizePath, join: joinPath } = require('path');
 const { parse: parseToml } = require('toml');
 const { diffChars } = require('diff');
 const { minimatch } = require('minimatch');
@@ -748,25 +748,36 @@ wss.on('connection', (ws) => {
           );
         } else {
           try {
-            channels[msg.channel].subscriptions[file] = fs.watch(
-              file,
-              (e, filename) => {
-                if (e == 'rename') {
-                  ws.send(
-                    api.Command.encode(
-                      new api.Command({
-                        channel: msg.channel,
-                        fileEvent: {
-                          file: {
-                            path: file,
+            fs.lstat(file, (err, stats) => {
+              // TODO: handle errors
+
+              fileIsDir = stats.isDirectory();
+
+              channels[msg.channel].subscriptions[file] = fs.watch(
+                file,
+                (e, filename) => {
+                  const filenamePath = fileIsDir
+                    ? joinPath(file, filename)
+                    : file;
+
+                  if (e == 'rename') {
+                    ws.send(
+                      api.Command.encode(
+                        new api.Command({
+                          channel: msg.channel,
+                          fileEvent: {
+                            file: {
+                              path: filenamePath,
+                            },
+                            op: null, // TODO: set to 'Remove' when a file is moved/deleted
                           },
-                        },
-                      })
-                    ).finish()
-                  );
+                        })
+                      ).finish()
+                    );
+                  }
                 }
-              }
-            );
+              );
+            });
 
             ws.send(
               api.Command.encode(
