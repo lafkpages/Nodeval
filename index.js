@@ -47,10 +47,9 @@ process.on('uncaughtException', (err) => {
     );
     process.exit(4);
   } else {
-    throw err;
+    console.error(err);
+    process.exit(3);
   }
-
-  process.exit(3);
 });
 
 const wss = new WebSocketServer({ port });
