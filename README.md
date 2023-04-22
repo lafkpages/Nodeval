@@ -19,7 +19,7 @@ Nodeval is a blazingly fast and bleeding edge Node.js script that allows you to 
 
 - 📁 Local file editing
 - 🖥️ Command line access
-- 🌐 Access your Replit Repl from your own computer
+- 🌐 Access your computer from the Replit IDE
 - 🚀 Blazing fast performance
 - 🆕 Bleeding edge technology
 
