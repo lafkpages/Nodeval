@@ -19,6 +19,11 @@ const { parse: parseToml } = require('toml');
 const { diffChars } = require('diff');
 const { minimatch } = require('minimatch');
 const { checkCommandsInteractive } = require('./util/checkCommand');
+const {
+  escapeQuotes,
+  cmdArgsToString,
+  cmdStringToArgs,
+} = require('./util/cmdArgs');
 
 dotenv.config();
 
@@ -104,15 +109,11 @@ function loadDotReplit() {
         return;
       }
 
-      dotReplit.fullRunCommand = `sh -c '${escapeQuotes(
-        dotReplit.run || dotReplitDefaultRunCommand
-      )}'`;
+      dotReplit.run = dotReplit.run || dotReplitDefaultRunCommand;
 
-      dotReplit.fullRunCommandArgs = [
-        'sh',
-        '-c',
-        `'${escapeQuotes(dotReplit.run || dotReplitDefaultRunCommand)}'`,
-      ];
+      dotReplit.fullRunCommand = `sh -c '${escapeQuotes(dotReplit.run)}'`;
+
+      dotReplit.fullRunCommandArgs = cmdStringToArgs(dotReplit.run);
 
       resolve(dotReplit);
     });
@@ -142,10 +143,6 @@ const ansiClear = '\033[H\033[J\r';
 
 function randomStr() {
   return Math.random().toString(36).substring(2);
-}
-
-function escapeQuotes(str) {
-  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
 function startPty(sessionId, chanId, ws, infoCallback) {
@@ -618,17 +615,7 @@ wss.on('connection', (ws) => {
           }, 10);
         });
       } else {
-        const cmd = msg.exec.args
-          .map((s) => {
-            // Escape quotes and escapes
-            s = s.replace(/("|\\)/g, '\\$1');
-
-            // Wrap in quotes
-            s = `"${s}"`;
-
-            return s;
-          })
-          .join(' ');
+        const cmd = cmdArgsToString(msg.exec.args);
 
         ws.send(
           api.Command.encode(
