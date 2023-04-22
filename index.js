@@ -1517,6 +1517,10 @@ checkCommandsInteractive({
     required: false,
     name: 'RipGrep',
   },
+  ag: {
+    required: false,
+    name: 'The Silver Searcher (ag)',
+  },
 });
 
 setTimeout(() => {
