@@ -4,6 +4,7 @@
 # Testing
 test.js
 test
+nodeval.replit
 
 # File history
 .file-history.json
@@ -15,6 +16,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+
+# Python
+venv
+poetry.lock
+pyproject.toml
+replit.nix
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
