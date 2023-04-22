@@ -41,6 +41,7 @@ async function checkCommandInteractive(cmd, opts = {}) {
     newLine: true,
     exitCode: 63,
     logFunc: null,
+    url: null,
     ...opts,
   };
 
@@ -59,7 +60,9 @@ async function checkCommandInteractive(cmd, opts = {}) {
       opts.name || cmd
     }" not found, but is ${
       opts.required ? 'required' : 'recommended'
-    } by this program.${opts.newLine ? '\n' : ''}`
+    } by this program.${
+      opts.url ? ` It can be downloaded at ${opts.url}` : ''
+    }${opts.newLine ? '\n' : ''}`
   );
 
   if (opts.required) {
