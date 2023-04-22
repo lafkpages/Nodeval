@@ -1520,6 +1520,7 @@ checkCommandsInteractive({
   ag: {
     required: false,
     name: 'The Silver Searcher (ag)',
+    url: 'https://geoff.greer.fm/ag/',
   },
 });
 
