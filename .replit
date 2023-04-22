@@ -5,6 +5,14 @@ hidden = [ ".DS_Store", ".file-history.json", ".vscode", ".env" ]
 [env]
 NODEVAL_DOTREPLIT_ENV_TEST="it works"
 
+[languages]
+
+[languages.javascript]
+pattern = "**/{*.js,*.jsx,*.ts,*.tsx}"
+
+[languages.javascript.languageServer]
+start = "typescript-language-server --stdio"
+
 [nodeval]
 connectToast = "Welcome to Nodeval"
 inaccessibleFiles = [ ".DS_Store", ".env", ".file-history.json" ]
