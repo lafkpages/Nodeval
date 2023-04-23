@@ -27,6 +27,7 @@ const {
   cmdArgsToString,
   cmdStringToArgs,
 } = require('./util/cmdArgs');
+const { bitsToAscii: permissionBitsToAscii } = require('./util/permissions');
 
 dotenv.config();
 
@@ -1585,6 +1586,53 @@ wss.on('connection', (ws) => {
             new api.Command({
               channel: msg.channel,
               output: data.toString('utf-8'),
+            })
+          ).finish()
+        );
+      });
+    } else if (msg.stat) {
+      const path = normalizePath(msg.stat.path);
+
+      fs.stat(path, (err, stats) => {
+        if (err) {
+          if (err.code == 'ENOENT') {
+            ws.send(
+              api.Command.encode(
+                new api.Command({
+                  channel: msg.channel,
+                  ref: msg.ref,
+                  session: sessionId,
+                  statRes: {},
+                })
+              ).finish()
+            );
+          } else {
+            ws.send(
+              api.Command.encode(
+                new api.Command({
+                  channel: msg.channel,
+                  ref: msg.ref,
+                  session: sessionId,
+                  error: err.toString(),
+                })
+              ).finish()
+            );
+          }
+          return;
+        }
+
+        ws.send(
+          api.Command.encode(
+            new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              session: sessionId,
+              statRes: {
+                exists: true,
+                size: stats.size.toString(),
+                fileMode: permissionBitsToAscii(stats.mode),
+                modTime: Math.floor(stats.mtimeMs / 1000).toString(),
+              },
             })
           ).finish()
         );
