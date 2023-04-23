@@ -31,7 +31,12 @@ function octalToAscii(n) {
   return s;
 }
 
+function bitsToOctal(b) {
+  return (b & 511).toString(8);
+}
+
 module.exports = {
   octalDigitToAscii,
   octalToAscii,
+  bitsToOctal,
 };
