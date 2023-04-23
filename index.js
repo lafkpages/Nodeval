@@ -18,7 +18,10 @@ const { normalize: normalizePath, join: joinPath } = require('path');
 const { parse: parseToml } = require('toml');
 const { diffChars } = require('diff');
 const { minimatch } = require('minimatch');
-const { checkCommandsInteractive } = require('./util/checkCommand');
+const {
+  checkCommandInteractive,
+  checkCommandsInteractive,
+} = require('./util/checkCommand');
 const {
   escapeQuotes,
   cmdArgsToString,
@@ -86,6 +89,9 @@ try {
   fs.writeFileSync('.file-history.json', '{}', { flag: 'wx' });
 } catch {}
 
+// Warn the user if a configured LSP server isn't installed
+let hasWarnedForLsp = {};
+
 // dotReplit config
 let dotReplit = {};
 
@@ -94,7 +100,7 @@ const dotReplitDefaultRunCommand =
 
 function loadDotReplit() {
   return new Promise((resolve, reject) => {
-    fs.readFile('.replit', 'utf-8', (err, data) => {
+    fs.readFile('.replit', 'utf-8', async (err, data) => {
       if (err) {
         console.error('Error reading .replit:', err);
         reject(err);
@@ -114,6 +120,37 @@ function loadDotReplit() {
       dotReplit.fullRunCommand = `sh -c '${escapeQuotes(dotReplit.run)}'`;
 
       dotReplit.fullRunCommandArgs = cmdStringToArgs(dotReplit.run);
+
+      // Check if LSP servers are installed
+      if (dotReplit.languages) {
+        for (const [lang, conf] of Object.entries(dotReplit.languages)) {
+          // Avoid duplicate warns
+          if (hasWarnedForLsp[lang]) {
+            continue;
+          }
+
+          const startCmd = conf?.languageServer?.start;
+
+          if (!startCmd) {
+            continue;
+          }
+
+          const startCmdNameMatch = startCmd.match(/^(\S+)/);
+
+          if (!startCmdNameMatch) {
+            continue;
+          }
+
+          const startCmdName = startCmdNameMatch[1];
+          const installed = await checkCommandInteractive(startCmdName, {
+            newLine: false,
+          });
+
+          if (!installed) {
+            hasWarnedForLsp[lang] = true;
+          }
+        }
+      }
 
       resolve(dotReplit);
     });
@@ -1323,7 +1360,15 @@ wss.on('connection', (ws) => {
       const proc = channels[msg.channel].process;
 
       if (proc) {
-        proc.write(msg.input);
+        if (proc.stdin?.write) {
+          proc.stdin.write(msg.input);
+        } else if (proc.write) {
+          proc.write(msg.input);
+        } else {
+          console.warn(
+            'Warning: client tried to write to a channel without a writable process'
+          );
+        }
       }
     } else if (msg.toolchainGetRequest) {
       ws.send(
@@ -1342,6 +1387,26 @@ wss.on('connection', (ws) => {
                     fileTypeAttrs: {},
                   },
                 ],
+                languageServers:
+                  typeof dotReplit.languages == 'object'
+                    ? Object.entries(dotReplit.languages).map(
+                        ([lang, config]) => ({
+                          id: `.replit/languageServer:${lang}`,
+                          name: config.languageServer?.start || null,
+                          language: lang,
+                          fileTypeAttrs: {
+                            filePattern: config.pattern || null,
+                          },
+                          config: {
+                            startCommand: {
+                              args: config.languageServer?.start
+                                ? cmdStringToArgs(config.languageServer.start)
+                                : null,
+                            },
+                          },
+                        })
+                      )
+                    : [],
               },
             },
           })
@@ -1460,6 +1525,70 @@ wss.on('connection', (ws) => {
           ).finish()
         );
       }
+    } else if (msg.startLSP) {
+      const id = msg.startLSP.languageServerId;
+
+      // Assume ID starts in .replit
+      if (!id.startsWith('.replit/')) {
+        console.warn(
+          'Warning: client requested an LSP server on a dotReplit file that is not ".replit". This is unsupported'
+        );
+        return;
+      }
+
+      const langMatch = id.match(/\/languageServer:(.+)$/);
+
+      if (!langMatch) {
+        console.warn('Warning: client sent an invalid LSP start request');
+        return;
+      }
+
+      const lang = langMatch[1];
+      const lspConfig = dotReplit.languages[lang];
+
+      if (!lspConfig) {
+        console.warn('Warning: client requested a non-configured LSP server');
+        return;
+      }
+
+      const lspStartCmd = lspConfig.languageServer?.start || null;
+
+      if (!lspStartCmd) {
+        console.warn(
+          'Warning: client requested an LSP server without a start command'
+        );
+        return;
+      }
+
+      const lspStartCmdAllArgs = cmdStringToArgs(lspStartCmd);
+      const lspStartCmdName = lspStartCmdAllArgs[0];
+      const lspStartCmdArgs = lspStartCmdAllArgs.slice(1);
+
+      channels[msg.channel].process = spawn(lspStartCmdName, lspStartCmdArgs);
+
+      channels[msg.channel].process.on('spawn', () => {
+        ws.send(
+          api.Command.encode(
+            new api.Command({
+              channel: msg.channel,
+              ref: msg.ref,
+              session: sessionId,
+              ok: {},
+            })
+          ).finish()
+        );
+      });
+
+      channels[msg.channel].process.on('data', (data) => {
+        ws.send(
+          api.Command.encode(
+            new api.Command({
+              channel: msg.channel,
+              output: data.toString('utf-8'),
+            })
+          ).finish()
+        );
+      });
     } else {
       console.dir(msg);
     }
