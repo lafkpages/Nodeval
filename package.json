@@ -21,7 +21,7 @@
   "author": "LuisAFK",
   "license": "ISC",
   "dependencies": {
-    "@replit/protocol": "^0.3.6",
+    "@replit/protocol": "^0.3.12",
     "crc": "^4.3.2",
     "diff": "^5.1.0",
     "diskusage": "^1.1.3",
