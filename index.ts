@@ -1134,10 +1134,10 @@ wss.on('connection', (ws) => {
               );
             }, 10);
 
-            let watcher = null;
+            let watcher: fs.FSWatcher | null = null;
             watcher = fs.watch(path, (e, filename) => {
               if (!channels[msg.channel]) {
-                watcher.close();
+                watcher?.close();
                 return;
               }
 
