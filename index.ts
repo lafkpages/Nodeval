@@ -308,7 +308,7 @@ function makeTimestamp(now: number | null = null) {
 }
 
 // Import previous file history
-import * as fileHistory from './.file-history.json';
+const fileHistory = require(process.cwd() + '/.file-history.json');
 
 // Session to WS map
 const sessions: {

@@ -4,5 +4,9 @@
     "outDir": "js",
     "resolveJsonModule": true,
     "strict": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "**/.file-history.json"
+  ]
 }
