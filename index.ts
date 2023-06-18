@@ -330,8 +330,8 @@ const sessions: {
         showOutput?: boolean;
       };
     };
-    userId: number;
-    username: string;
+    userId: number | null;
+    username: string | null;
     activeFile: string | null;
   };
 } = {};
@@ -580,7 +580,7 @@ wss.on('connection', (ws) => {
 
           console.log(
             'Client is',
-            msg.userEvent.eventName == 'meta:ready' ? 'ready' : 'starting',
+            msg.userEvent?.eventName == 'meta:ready' ? 'ready' : 'starting',
             'user ID',
             userId,
             `aka "@${username}", session ID`,
@@ -600,7 +600,7 @@ wss.on('connection', (ws) => {
                 wsIter.send(
                   api.Command.encode(
                     api.Command.create({
-                      channel: chanId,
+                      channel: parseInt(chanId),
                       session: -sessionId,
                       join: {
                         id: userId,
@@ -688,24 +688,14 @@ wss.on('connection', (ws) => {
         disk.check('.', (err, diskUsage) => {
           // TODO: handle errors
 
-          ws.send(
-            api.Command.encode(
-              api.Command.create({
-                channel: msg.channel,
-                output: `${diskUsage.total - diskUsage.free}\n${
-                  diskUsage.total
-                }\n`,
-              })
-            ).finish()
-          );
-
-          setTimeout(() => {
+          if (diskUsage) {
             ws.send(
               api.Command.encode(
                 api.Command.create({
                   channel: msg.channel,
-                  ref: msg.ref,
-                  ok: {},
+                  output: `${diskUsage.total - diskUsage.free}\n${
+                    diskUsage.total
+                  }\n`,
                 })
               ).finish()
             );
@@ -715,12 +705,24 @@ wss.on('connection', (ws) => {
                 api.Command.encode(
                   api.Command.create({
                     channel: msg.channel,
-                    state: api.State.Stopped,
+                    ref: msg.ref,
+                    ok: {},
                   })
                 ).finish()
               );
+
+              setTimeout(() => {
+                ws.send(
+                  api.Command.encode(
+                    api.Command.create({
+                      channel: msg.channel,
+                      state: api.State.Stopped,
+                    })
+                  ).finish()
+                );
+              }, 10);
             }, 10);
-          }, 10);
+          }
         });
       } else {
         const cmd = cmdArgsToString(msg.exec.args);
@@ -1421,8 +1423,8 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.resizeTerm) {
-      if (channels[msg.channel].process) {
-        channels[msg.channel].process.resize(
+      if (channels[msg.channel].process && !(channels[msg.channel].process instanceof ChildProcess)) {
+        (channels[msg.channel].process as IPty).resize(
           msg.resizeTerm.cols,
           msg.resizeTerm.rows
         );
