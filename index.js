@@ -177,7 +177,7 @@ try {
 }
 
 // ANSI codes to clear the screen
-const ansiClear = '\033[H\033[J\r';
+const ansiClear = '\x1b[H\x1b[J\r';
 
 function randomStr() {
   return Math.random().toString(36).substring(2);
