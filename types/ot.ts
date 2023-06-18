@@ -18,3 +18,15 @@ export interface Diff {
   removed?: boolean;
   count?: number;
 }
+
+export interface Version {
+  spookyVersion: number;
+  op: OTv1[];
+  crc32: number;
+  comitted: {
+    seconds: number;
+    nanos: number;
+  };
+  version: number;
+  userId: number;
+}

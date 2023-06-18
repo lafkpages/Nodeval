@@ -287,7 +287,7 @@ function startPty(
       return;
     }
 
-    channels[chanId].process!.write('echo -n "ptyDev:"`tty`":ptyDev"\r');
+    (channels[chanId].process as IPty).write('echo -n "ptyDev:"`tty`":ptyDev"\r');
   }, 10);
 
   channels[chanId].process?.on('exit', () => {
@@ -300,7 +300,7 @@ function startPty(
 function makeTimestamp(now: number | null = null) {
   now = now || Date.now();
   return {
-    seconds: Math.floor(now / 1000).toString(),
+    seconds: Math.floor(now / 1000),
     nanos: 0,
   };
 }
@@ -495,12 +495,12 @@ wss.on('connection', (ws) => {
                     user: Object.entries(sessions).map((entry) => ({
                       id: entry[1].userId,
                       name: entry[1].username,
-                      session: entry[0],
+                      session: parseInt(entry[0]),
                     })),
                     files: Object.entries(sessions).map((entry) => ({
                       file: entry[1].activeFile,
                       userId: entry[1].userId,
-                      session: entry[0],
+                      session: parseInt(entry[0]),
                       timestamp: makeTimestamp(),
                     })),
                   },
@@ -528,7 +528,7 @@ wss.on('connection', (ws) => {
         case 'ot':
           if (channels[msg.closeChan.id].subscriptions) {
             for (const [path, watcher] of Object.entries(
-              channels[msg.closeChan.id].subscriptions
+              channels[msg.closeChan.id].subscriptions!
             )) {
               watcher.close();
             }
@@ -563,9 +563,9 @@ wss.on('connection', (ws) => {
         msg.userEvent.eventName == 'meta:ready' ||
         msg.userEvent.eventName == 'meta:start'
       ) {
-        replId = msg.userEvent.eventData.fields.replId.stringValue;
-        replUrl = msg.userEvent.eventData.fields.url.stringValue;
-        userId = msg.userEvent.eventData.fields.userId.numberValue;
+        replId = msg.userEvent.eventData?.fields.replId.stringValue || null;
+        replUrl = msg.userEvent.eventData?.fields.url.stringValue || null;
+        userId = msg.userEvent.eventData?.fields.userId.numberValue || null;
 
         sessions[sessionId].userId = userId;
 
@@ -830,52 +830,11 @@ wss.on('connection', (ws) => {
         }
       );
     } else if (msg.subscribeFile) {
-      for (let file of msg.subscribeFile.files) {
-        file = file.path;
+      for (const file of msg.subscribeFile.files) {
+        const filePath = file.path;
 
-        if (file in channels[msg.channel].subscriptions) {
-          ws.send(
-            api.Command.encode(
-              api.Command.create({
-                channel: msg.channel,
-                ref: msg.ref,
-                ok: {},
-              })
-            ).finish()
-          );
-        } else {
-          try {
-            fs.lstat(file, (err, stats) => {
-              // TODO: handle errors
-
-              const fileIsDir = stats.isDirectory();
-
-              channels[msg.channel].subscriptions[file] = fs.watch(
-                file,
-                (e, filename) => {
-                  const filenamePath = fileIsDir
-                    ? joinPath(file, filename)
-                    : file;
-
-                  if (e == 'rename') {
-                    ws.send(
-                      api.Command.encode(
-                        api.Command.create({
-                          channel: msg.channel,
-                          fileEvent: {
-                            file: {
-                              path: filenamePath,
-                            },
-                            op: null, // TODO: set to 'Remove' when a file is moved/deleted
-                          },
-                        })
-                      ).finish()
-                    );
-                  }
-                }
-              );
-            });
-
+        if (channels[msg.channel].subscriptions) {
+          if (filePath in channels[msg.channel].subscriptions!) {
             ws.send(
               api.Command.encode(
                 api.Command.create({
@@ -885,16 +844,59 @@ wss.on('connection', (ws) => {
                 })
               ).finish()
             );
-          } catch (err) {
-            ws.send(
-              api.Command.encode(
-                api.Command.create({
-                  channel: msg.channel,
-                  ref: msg.ref,
-                  error: `unable to subscribe file from fsevents: ${err.message}`,
-                })
-              ).finish()
-            );
+          } else {
+            try {
+              fs.lstat(filePath, (err, stats) => {
+                // TODO: handle errors
+
+                const fileIsDir = stats.isDirectory();
+
+                channels[msg.channel].subscriptions![filePath] = fs.watch(
+                  filePath,
+                  (e, filename) => {
+                    const filenamePath = fileIsDir
+                      ? joinPath(filePath, filename)
+                      : filePath;
+
+                    if (e == 'rename') {
+                      ws.send(
+                        api.Command.encode(
+                          api.Command.create({
+                            channel: msg.channel,
+                            fileEvent: {
+                              file: {
+                                path: filenamePath,
+                              },
+                              op: null, // TODO: set to 'Remove' when a file is moved/deleted
+                            },
+                          })
+                        ).finish()
+                      );
+                    }
+                  }
+                );
+              });
+
+              ws.send(
+                api.Command.encode(
+                  api.Command.create({
+                    channel: msg.channel,
+                    ref: msg.ref,
+                    ok: {},
+                  })
+                ).finish()
+              );
+            } catch (err) {
+              ws.send(
+                api.Command.encode(
+                  api.Command.create({
+                    channel: msg.channel,
+                    ref: msg.ref,
+                    error: `unable to subscribe file from fsevents: ${err instanceof Error ? err.message : err}`,
+                  })
+                ).finish()
+              );
+            }
           }
         }
       }
@@ -927,7 +929,7 @@ wss.on('connection', (ws) => {
           wsIter.send(
             api.Command.encode(
               api.Command.create({
-                channel: chanId,
+                channel: parseInt(chanId),
                 session: -sessionId,
                 fileOpened: {
                   file: activeFile,
@@ -973,7 +975,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (/*msg.otLinkFile?.file.path || */ msg.read) {
-      const file = msg.otLinkFile?.file.path || msg.read.path;
+      const file = /*msg.otLinkFile?.file.path || */ msg.read.path;
 
       fs.readFile(file, (err, data) => {
         if (err) {
@@ -1001,7 +1003,7 @@ wss.on('connection', (ws) => {
             );
           }
         } else {
-          const bdata = data.toString('base64');
+          const bdata = new Uint8Array(data);
 
           const res = msg.otLinkFile
             ? {
@@ -1020,11 +1022,9 @@ wss.on('connection', (ws) => {
                 },
               };
 
-          const constr = msg.otLinkFile ? api.OTLinkFileResponse : api.Command;
-
           ws.send(
             api.Command.encode(
-              new constr({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 session: sessionId,
@@ -1062,159 +1062,163 @@ wss.on('connection', (ws) => {
       });
     } else if (msg.otLinkFile) {
       if (channels[msg.channel].otstatus) {
-        const path = normalizePath(msg.otLinkFile.file.path);
+        const path = msg.otLinkFile.file ? normalizePath(msg.otLinkFile.file.path) : null;
 
-        fs.readFile(path, (err, data) => {
-          if (err) {
-            ws.send(
-              api.Command.encode(
-                api.Command.create({
-                  channel: msg.channel,
-                  ref: msg.ref,
-                  error: `unable to read file content from ot: open ${path}: no such file or directory`,
-                })
-              ).finish()
-            );
-            return;
-          }
-
-          const now = Date.now();
-
-          if (!fileHistory[path]) {
-            fileHistory[path] = {
-              versions: [
-                {
-                  spookyVersion: 1,
-                  op: [
-                    {
-                      insert: data.toString('utf-8'),
-                    },
-                  ],
-                  crc32: crc32(data),
-                  comitted: makeTimestamp(),
-                  version: 1,
-                  userId,
-                },
-              ],
-            };
-
-            console.log('Created initial version of', path);
-          }
-
-          channels[msg.channel].otstatus.linkedFile = path;
-          channels[msg.channel].otstatus.version =
-            fileHistory[path].versions.length;
-
-          ws.send(
-            api.Command.encode(
-              api.Command.create({
-                channel: msg.channel,
-                ref: msg.ref,
-                session: sessionId,
-                otLinkFileResponse: {
-                  version: fileHistory[path].versions.length,
-                  linkedFile: {
-                    path: path,
-                    content: data.toString('base64'),
-                  },
-                },
-              })
-            ).finish()
-          );
-          setTimeout(() => {
-            ws.send(
-              api.Command.encode(
-                api.Command.create({
-                  channel: msg.channel,
-                  ref: msg.ref,
-                  ok: {},
-                })
-              ).finish()
-            );
-          }, 10);
-
-          let watcher = null;
-          watcher = fs.watch(path, (e, filename) => {
-            if (!channels[msg.channel]) {
-              watcher.close();
+        if (path) {
+          fs.readFile(path, (err, data) => {
+            if (err) {
+              ws.send(
+                api.Command.encode(
+                  api.Command.create({
+                    channel: msg.channel,
+                    ref: msg.ref,
+                    error: `unable to read file content from ot: open ${path}: no such file or directory`,
+                  })
+                ).finish()
+              );
               return;
             }
 
-            if (e == 'change') {
-              // Check if change is because of flushing OTs
-              if (!channels[msg.channel].flushing) {
-                const cursorId = randomStr();
-                const cursor = {
-                  position: 0,
-                  selectionStart: 0,
-                  selectionEnd: 0,
-                  user: {
-                    name: 'replit',
+            const now = Date.now();
+
+            if (!fileHistory[path]) {
+              fileHistory[path] = {
+                versions: [
+                  {
+                    spookyVersion: 1,
+                    op: [
+                      {
+                        insert: data.toString('utf-8'),
+                      },
+                    ],
+                    crc32: crc32(data),
+                    comitted: makeTimestamp(),
+                    version: 1,
+                    userId,
                   },
-                  id: cursorId,
-                };
+                ],
+              };
 
-                channels[msg.channel].otstatus.cursors.push(cursor);
+              console.log('Created initial version of', path);
+            }
 
-                ws.send(
-                  api.Command.encode(
-                    api.Command.create({
-                      channel: msg.channel,
-                      otNewCursor: cursor,
-                    })
-                  ).finish()
-                );
+            channels[msg.channel].otstatus.linkedFile = path;
+            channels[msg.channel].otstatus.version =
+              fileHistory[path].versions.length;
 
-                // Get old file contents
-                let oldContents = '';
+            ws.send(
+              api.Command.encode(
+                api.Command.create({
+                  channel: msg.channel,
+                  ref: msg.ref,
+                  session: sessionId,
+                  otLinkFileResponse: {
+                    version: fileHistory[path].versions.length,
+                    linkedFile: {
+                      path: path,
+                      content: data.toString('base64'),
+                    },
+                  },
+                })
+              ).finish()
+            );
+            setTimeout(() => {
+              ws.send(
+                api.Command.encode(
+                  api.Command.create({
+                    channel: msg.channel,
+                    ref: msg.ref,
+                    ok: {},
+                  })
+                ).finish()
+              );
+            }, 10);
 
-                for (const version of fileHistory[path].versions) {
-                  oldContents = applyOTs(oldContents, version.op).file;
-                }
+            let watcher = null;
+            watcher = fs.watch(path, (e, filename) => {
+              if (!channels[msg.channel]) {
+                watcher.close();
+                return;
+              }
 
-                // TODO: iterate over versions and apply individually
-
-                // Get new file contents
-                fs.readFile(path, 'utf-8', (err, newContents) => {
-                  // TODO: handle errors
-
-                  // Check if there were changes
-                  if (oldContents == newContents) {
-                    return;
-                  }
-
-                  // Get file changes as OTs
-                  const ots = diffsToOTs(diffChars(oldContents, newContents));
-
-                  const newVersion = fileHistory[path].versions.length + 1;
-
-                  // Construct OT packet
-                  const packet = {
-                    spookyVersion: newVersion,
-                    op: ots,
-                    crc32: crc32(newContents),
-                    comitted: makeTimestamp(now),
-                    version: newVersion,
+              if (e == 'change') {
+                // Check if change is because of flushing OTs
+                if (!channels[msg.channel].flushing) {
+                  const cursorId = randomStr();
+                  const cursor = {
+                    position: 0,
+                    selectionStart: 0,
+                    selectionEnd: 0,
+                    user: {
+                      name: 'replit',
+                    },
+                    id: cursorId,
                   };
 
-                  // Send to client
+                  channels[msg.channel].otstatus.cursors.push(cursor);
+
                   ws.send(
                     api.Command.encode(
                       api.Command.create({
                         channel: msg.channel,
-                        ot: packet,
+                        otNewCursor: cursor,
                       })
                     ).finish()
                   );
 
-                  // Save to file history
-                  fileHistory[path].versions.push(packet);
-                });
+                  // Get old file contents
+                  let oldContents = '';
+
+                  for (const version of fileHistory[path].versions) {
+                    oldContents = applyOTs(oldContents, version.op).file;
+                  }
+
+                  // TODO: iterate over versions and apply individually
+
+                  // Get new file contents
+                  fs.readFile(path, 'utf-8', (err, newContents) => {
+                    // TODO: handle errors
+
+                    // Check if there were changes
+                    if (oldContents == newContents) {
+                      return;
+                    }
+
+                    // Get file changes as OTs
+                    const ots = diffsToOTs(diffChars(oldContents, newContents));
+
+                    const newVersion = fileHistory[path].versions.length + 1;
+
+                    // Construct OT packet
+                    const packet = {
+                      spookyVersion: newVersion,
+                      op: ots,
+                      crc32: crc32(newContents),
+                      comitted: makeTimestamp(now),
+                      version: newVersion,
+                    };
+
+                    // Send to client
+                    ws.send(
+                      api.Command.encode(
+                        api.Command.create({
+                          channel: msg.channel,
+                          ot: packet,
+                        })
+                      ).finish()
+                    );
+
+                    // Save to file history
+                    fileHistory[path].versions.push(packet);
+                  });
+                }
               }
-            }
+            });
+            channels[msg.channel].subscriptions[path] = watcher;
           });
-          channels[msg.channel].subscriptions[path] = watcher;
-        });
+        } else {
+          // TODO: handle missing path
+        }
       }
     } else if (msg.otNewCursor) {
       if (channels[msg.channel].otstatus) {
@@ -1617,7 +1621,7 @@ wss.on('connection', (ws) => {
       }
 
       const lang = langMatch[1];
-      const lspConfig = dotReplit.languages[lang];
+      const lspConfig = dotReplit.languages?.[lang];
 
       if (!lspConfig) {
         console.warn('Warning: client requested a non-configured LSP server');
