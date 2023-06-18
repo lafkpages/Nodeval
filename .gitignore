@@ -9,6 +9,9 @@ nodeval.replit
 # File history
 .file-history.json
 
+# TS builds
+js
+
 # Logs
 logs
 *.log
