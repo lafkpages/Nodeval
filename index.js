@@ -35,12 +35,6 @@ dotenv.config();
 
 const platform = os.platform();
 
-const port = parseInt(process.env.NODEVAL_PORT) || 4096;
-const shell =
-  process.env.NODEVAL_SHELL ||
-  (platform == 'win32' ? 'powershell.exe' : 'bash');
-const nodevalReplId = process.env.NODEVAL_REPL_ID || null;
-
 const args = arg({
   '--help': Boolean,
   '--version': Boolean,
@@ -53,6 +47,12 @@ const args = arg({
   '-p': '--port',
   '-r': '--repl-id',
 });
+
+const port = args['--port'] || parseInt(process.env.NODEVAL_PORT) || 4096;
+const shell =
+  process.env.NODEVAL_SHELL ||
+  (platform == 'win32' ? 'powershell.exe' : 'bash');
+const nodevalReplId = args['--repl-id'] || process.env.NODEVAL_REPL_ID || null;
 
 if (args['--help']) {
   showUsage();
