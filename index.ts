@@ -572,7 +572,7 @@ wss.on('connection', (ws) => {
             id: userId,
           },
         }).then((res) => {
-          username = res.data.user.username;
+          username = ((res as any).data?.user?.username || null) as string | null;
           sessions[sessionId].username = username;
 
           console.log(
