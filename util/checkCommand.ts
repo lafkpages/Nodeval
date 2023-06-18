@@ -1,13 +1,30 @@
-const { exec } = require('child_process');
+import { exec } from 'child_process';
+import type { ExecException } from 'child_process';
+import type { AsyncReturnType } from '../types';
 
-function checkCommand(cmd) {
-  const r = {
+export interface CheckCommandResult {
+  installed: boolean;
+  path: string | null;
+  error: ExecException | string | null;
+};
+
+export interface CheckCommandOptions {
+  name?: string | null;
+  required?: boolean;
+  newLine?: boolean;
+  exitCode?: number;
+  logFunc?: Function | null;
+  url?: string | null;
+};
+
+export function checkCommand(cmd: string): Promise<CheckCommandResult> {
+  const r: CheckCommandResult = {
     installed: false,
     path: null,
     error: null,
   };
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec(`command -v "${cmd}"`, (err, path, stderr) => {
       if (err) {
         r.error = err;
@@ -34,7 +51,7 @@ function checkCommand(cmd) {
   });
 }
 
-async function checkCommandInteractive(cmd, opts = {}) {
+export async function checkCommandInteractive(cmd: string, opts: CheckCommandOptions = {}) {
   opts = {
     name: null,
     required: false,
@@ -72,8 +89,10 @@ async function checkCommandInteractive(cmd, opts = {}) {
   return false;
 }
 
-async function checkCommandsInteractive(cmds, defaultOpts = {}) {
-  const r = [];
+export async function checkCommandsInteractive(cmds: {
+  [cmd: string]: boolean | CheckCommandOptions;
+}, defaultOpts: CheckCommandOptions = {}) {
+  const r: AsyncReturnType<typeof checkCommandInteractive>[] = [];
 
   defaultOpts = {
     newLine: false,
@@ -95,9 +114,3 @@ async function checkCommandsInteractive(cmds, defaultOpts = {}) {
 
   return r;
 }
-
-module.exports = {
-  checkCommand,
-  checkCommandInteractive,
-  checkCommandsInteractive,
-};

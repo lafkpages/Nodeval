@@ -1,4 +1,4 @@
-const octalDigitToAsciiMap = [
+export const octalDigitToAsciiMap = [
   '---',
   '--x',
   '-w-',
@@ -9,7 +9,7 @@ const octalDigitToAsciiMap = [
   'rwx',
 ];
 
-function octalDigitToAscii(digit) {
+export function octalDigitToAscii(digit: number) {
   if (digit < 0 || digit > 7) {
     throw new RangeError('Octal digit must be between [0,7]');
   }
@@ -17,31 +17,22 @@ function octalDigitToAscii(digit) {
   return octalDigitToAsciiMap[digit];
 }
 
-function octalToAscii(n) {
+export function octalToAscii(n: number | string) {
   n = n.toString();
 
   let s = '';
 
   for (let digit of n) {
-    digit = parseInt(digit);
-
-    s += octalDigitToAscii(digit);
+    s += octalDigitToAscii(parseInt(digit));
   }
 
   return s;
 }
 
-function bitsToOctal(b) {
+export function bitsToOctal(b: number) {
   return (b & 511).toString(8);
 }
 
-function bitsToAscii(b) {
+export function bitsToAscii(b: number) {
   return octalToAscii(bitsToOctal(b));
 }
-
-module.exports = {
-  octalDigitToAscii,
-  octalToAscii,
-  bitsToOctal,
-  bitsToAscii,
-};

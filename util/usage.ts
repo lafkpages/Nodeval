@@ -1,4 +1,4 @@
-function showUsage() {
+export function showUsage() {
   console.log(
     `
     Usage: node . [options]
@@ -7,7 +7,3 @@ function showUsage() {
       .replace(/^ {4}/gm, '')
   );
 }
-
-module.exports = {
-  showUsage,
-};

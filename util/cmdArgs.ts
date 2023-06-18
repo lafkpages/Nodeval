@@ -1,8 +1,8 @@
-function escapeQuotes(str) {
+export function escapeQuotes(str: string) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
-function cmdArgsToString(args) {
+export function cmdArgsToString(args: string[]) {
   return args
     .map((s) => {
       // Escape quotes and escapes
@@ -16,7 +16,7 @@ function cmdArgsToString(args) {
     .join(' ');
 }
 
-function cmdStringToArgs(cmd, includeShC = true) {
+export function cmdStringToArgs(cmd: string, includeShC = true) {
   return includeShC
     ? ['sh', '-c', `'${escapeQuotes(cmd)}'`]
     : _cmdStringToArgs(cmd).map((chunk) =>
@@ -24,13 +24,13 @@ function cmdStringToArgs(cmd, includeShC = true) {
       );
 }
 
-function _cmdStringToArgs(cmd) {
-  const result = [];
+function _cmdStringToArgs(cmd: string) {
+  const result: string[] = [];
   const log_matches = false;
 
   const regex = /(([\w-/_~\.]+)|("(.*?)")|('(.*?)'))/g;
   const groups = [2, 4, 6];
-  let match;
+  let match: RegExpExecArray | null;
 
   while ((match = regex.exec(cmd)) !== null) {
     // This is necessary to avoid infinite loops
@@ -42,8 +42,8 @@ function _cmdStringToArgs(cmd) {
     // For this to work the regex groups need to
     // be mutually exclusive
     groups.forEach(function (group) {
-      if (match[group]) {
-        result.push(match[group]);
+      if (match![group]) {
+        result.push(match![group]);
       }
     });
 
@@ -58,9 +58,3 @@ function _cmdStringToArgs(cmd) {
 
   return result;
 }
-
-module.exports = {
-  escapeQuotes,
-  cmdArgsToString,
-  cmdStringToArgs,
-};

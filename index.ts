@@ -1,35 +1,36 @@
 const { makeConsoleSafe } = require('safe-logging-replit');
 makeConsoleSafe(console);
 
-const package = require('./package.json');
-const arg = require('arg');
-const os = require('os');
-const osUtils = require('os-utils');
-const { WebSocketServer } = require('ws');
-const { api } = require('@replit/protocol');
-const { exec, spawn, execSync } = require('child_process');
-const { spawn: spawnPty } = require('node-pty');
-const { query } = require('replit-graphql');
-const { applyOTs, diffsToOTs } = require('./util/ot');
-const disk = require('diskusage');
-const fs = require('fs');
-const dotenv = require('dotenv');
-const crc32 = require('crc/crc32');
-const { normalize: normalizePath, join: joinPath } = require('path');
-const { parse: parseToml } = require('toml');
-const { diffChars } = require('diff');
-const { minimatch } = require('minimatch');
-const {
-  checkCommandInteractive,
-  checkCommandsInteractive,
-} = require('./util/checkCommand');
-const {
+import * as _package from './package.json';
+import * as arg from 'arg';
+import * as os from 'os';
+import * as osUtils from 'os-utils';
+import { WebSocketServer } from 'ws';
+import { api } from '@replit/protocol';
+import { exec, spawn, execSync } from 'child_process';
+import { spawn as spawnPty } from 'node-pty';
+import { query } from 'replit-graphql';
+import { applyOTs, diffsToOTs } from './util/ot';
+import * as disk from 'diskusage';
+import * as fs from 'fs';
+import * as dotenv from 'dotenv';
+import * as crc32 from 'crc/crc32';
+import { normalize as normalizePath, join as joinPath } from 'path';
+import { parse as parseToml } from 'toml';
+import { diffChars } from 'diff';
+import { minimatch } from 'minimatch';
+import { checkCommandInteractive, checkCommandsInteractive } from './util/checkCommand';
+import {
   escapeQuotes,
   cmdArgsToString,
   cmdStringToArgs,
-} = require('./util/cmdArgs');
-const { bitsToAscii: permissionBitsToAscii } = require('./util/permissions');
-const { showUsage } = require('./util/usage');
+} from './util/cmdArgs';
+import { bitsToAscii as permissionBitsToAscii } from './util/permissions';
+import { showUsage } from './util/usage';
+
+// Types
+import type { DotReplit, Cursor } from './types';
+import type { api as ReplitProtocol } from '@replit/protocol';
 
 dotenv.config();
 
@@ -58,7 +59,7 @@ if (args['--help']) {
   showUsage();
   process.exit(0);
 } else if (args['--version']) {
-  console.log(package.version);
+  console.log(_package.version);
   process.exit(0);
 }
 
@@ -70,7 +71,7 @@ if (!nodevalReplId) {
 
 // TODO: if the user connects from a Repl that isn't nodevalReplId, proxy to normal Replit Goval
 
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', (err: NodeJS.ErrnoException) => {
   if (err.code == 'EADDRINUSE') {
     console.error(
       'Port',
@@ -117,7 +118,7 @@ try {
 let hasWarnedForLsp = {};
 
 // dotReplit config
-let dotReplit = {};
+let dotReplit: DotReplit = {};
 
 const dotReplitDefaultRunCommand =
   "echo Run isn't configured. Try adding a .replit and configuring it https://docs.replit.com/programming-ide/configuring-run-button";
@@ -206,7 +207,12 @@ function randomStr() {
   return Math.random().toString(36).substring(2);
 }
 
-function startPty(sessionId, chanId, ws, infoCallback) {
+function startPty(
+  sessionId: number,
+  chanId: number,
+  ws,
+  infoCallback: () => [string, string, number, string]
+) {
   const [replId, username, userId, replUrl] = infoCallback();
   const channels = sessions[sessionId].channels;
 
@@ -228,7 +234,7 @@ function startPty(sessionId, chanId, ws, infoCallback) {
       NODEVAL_TTY: currentTty || '',
       NODEVAL_PID: process.pid,
       GOVAL_SESSION: sessionId,
-      GOVAL_VERSION: `${package.name}-${package.version}`,
+      GOVAL_VERSION: `${_package.name}-${_package.version}`,
       PS1: '\\[\\e[0;1;38;5;33m\\]\\u\\[\\e[0;2m\\]@\\[\\e[0;1;38;5;34m\\]\\h\\[\\e[0;2m\\] - \\[\\e[0;3;38;5;227m\\]\\W\\[\\e[0;2;3m\\]: \\[\\e[0m\\]',
       REPL_ID: replId,
       REPL_OWNER: username,
@@ -278,7 +284,7 @@ function startPty(sessionId, chanId, ws, infoCallback) {
   channels[chanId].process.on('exit', () => {
     console.log('Shell exited, respawning...');
 
-    startPty(...arguments);
+    startPty(sessionId, chanId, ws, infoCallback);
   });
 }
 
@@ -294,14 +300,39 @@ function makeTimestamp(now = null) {
 const fileHistory = require('./.file-history.json');
 
 // Session to WS map
-const sessions = {};
+const sessions: {
+  [sessionId: number]: {
+    ws: WebSocket;
+    channels: {
+      [chanId: number]: {
+        openChan: ReplitProtocol.OpenChannel;
+        subscriptions?: {
+          [path: string]: any; // TODO: fs.watcher
+        };
+        otstatus?: {
+          content: string;
+          version: number;
+          linkedFile: {} | null;
+          cursors: Cursor[];
+        };
+        flushing?: boolean;
+        process?: any; // TODO: node-pty or ChildProcess
+        processPtyDev?: string;
+        showOutput?: boolean;
+      };
+    };
+    userId: number;
+    username: string;
+    activeFile: string | null;
+  };
+} = {};
 
 wss.on('connection', (ws) => {
   ws.isAlive = true;
 
   console.log('Client connecting...');
 
-  const channels = {};
+  const channels: (typeof sessions)[number]['channels'] = {};
   let lastChanId = 0;
 
   let userId = null;
@@ -799,7 +830,7 @@ wss.on('connection', (ws) => {
             fs.lstat(file, (err, stats) => {
               // TODO: handle errors
 
-              fileIsDir = stats.isDirectory();
+              const fileIsDir = stats.isDirectory();
 
               channels[msg.channel].subscriptions[file] = fs.watch(
                 file,
