@@ -5,9 +5,9 @@ import * as _package from './package.json';
 import * as arg from 'arg';
 import * as os from 'os';
 import * as osUtils from 'os-utils';
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { api } from '@replit/protocol';
-import { exec, spawn, execSync } from 'child_process';
+import { exec, spawn, execSync, ChildProcess } from 'child_process';
 import { spawn as spawnPty } from 'node-pty';
 import { query } from 'replit-graphql';
 import { applyOTs, diffsToOTs } from './util/ot';
@@ -31,7 +31,6 @@ import { showUsage } from './util/usage';
 // Types
 import type { DotReplit, Cursor } from './types';
 import type { IPty } from 'node-pty';
-import type { ChildProcess } from 'child_process';
 import type { api as ReplitProtocol } from '@replit/protocol';
 
 dotenv.config();
@@ -247,12 +246,12 @@ function startPty(
     },
   });
 
-  channels[chanId].process!.on('data', (output) => {
+  channels[chanId].process!.on('data', (output: string) => {
     if (channels[chanId].processPtyDev) {
       if (channels[chanId].showOutput) {
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: chanId,
               output,
             })
@@ -262,7 +261,7 @@ function startPty(
         if (channels[chanId].openChan.service == 'shellrun2') {
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: chanId,
                 record: output,
               })
@@ -282,10 +281,14 @@ function startPty(
   });
 
   setTimeout(() => {
-    channels[chanId].process.write('echo -n "ptyDev:"`tty`":ptyDev"\r');
+    if (channels[chanId].process instanceof ChildProcess) {
+      return;
+    }
+
+    channels[chanId].process!.write('echo -n "ptyDev:"`tty`":ptyDev"\r');
   }, 10);
 
-  channels[chanId].process.on('exit', () => {
+  channels[chanId].process?.on('exit', () => {
     console.log('Shell exited, respawning...');
 
     startPty(sessionId, chanId, ws, infoCallback);
@@ -339,8 +342,8 @@ wss.on('connection', (ws) => {
   const channels: (typeof sessions)[number]['channels'] = {};
   let lastChanId = 0;
 
-  let userId = null;
-  let username = null;
+  let userId: number | null = null;
+  let username: string | null = null;
   const sessionId = ++lastSessId;
 
   let activeFile = null;
@@ -373,8 +376,8 @@ wss.on('connection', (ws) => {
 
         wsIter.send(
           api.Command.encode(
-            new api.Command({
-              channel: chanId,
+            api.Command.create({
+              channel: parseInt(chanId),
               session: -sessionId,
               part: {
                 id: userId,
@@ -405,7 +408,7 @@ wss.on('connection', (ws) => {
     if (msg.ping) {
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: 0,
             ref: msg.ref,
             pong: {},
@@ -440,7 +443,7 @@ wss.on('connection', (ws) => {
             setTimeout(() => {
               ws.send(
                 api.Command.encode(
-                  new api.Command({
+                  api.Command.create({
                     channel: chanId,
                     state: api.State.Stopped,
                   })
@@ -462,7 +465,7 @@ wss.on('connection', (ws) => {
           setTimeout(() => {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: chanId,
                   ref: msg.ref,
                   otstatus: channels[chanId].otstatus,
@@ -476,7 +479,7 @@ wss.on('connection', (ws) => {
           setTimeout(() => {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: chanId,
                   session: sessionId,
                   roster: {
@@ -501,7 +504,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.OpenChannelRes({
+          api.Command.create({
             channel: 0,
             ref: msg.ref,
             openChanRes: {
@@ -587,7 +590,7 @@ wss.on('connection', (ws) => {
 
                 wsIter.send(
                   api.Command.encode(
-                    new api.Command({
+                    api.Command.create({
                       channel: chanId,
                       session: -sessionId,
                       join: {
@@ -622,7 +625,7 @@ wss.on('connection', (ws) => {
       ) {
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               state: api.State.Running,
             })
@@ -637,7 +640,7 @@ wss.on('connection', (ws) => {
 
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 output: `${Date.now() * 1000000}\n${
@@ -650,7 +653,7 @@ wss.on('connection', (ws) => {
           setTimeout(() => {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   state: api.State.Stopped,
                 })
@@ -666,7 +669,7 @@ wss.on('connection', (ws) => {
       ) {
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               state: api.State.Running,
             })
@@ -678,7 +681,7 @@ wss.on('connection', (ws) => {
 
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 output: `${diskUsage.total - diskUsage.free}\n${
                   diskUsage.total
@@ -690,7 +693,7 @@ wss.on('connection', (ws) => {
           setTimeout(() => {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   ok: {},
@@ -701,7 +704,7 @@ wss.on('connection', (ws) => {
             setTimeout(() => {
               ws.send(
                 api.Command.encode(
-                  new api.Command({
+                  api.Command.create({
                     channel: msg.channel,
                     state: api.State.Stopped,
                   })
@@ -715,7 +718,7 @@ wss.on('connection', (ws) => {
 
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               state: api.State.Running,
             })
@@ -731,7 +734,7 @@ wss.on('connection', (ws) => {
           (error, stdout, stderr) => {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   output: stdout,
@@ -748,7 +751,7 @@ wss.on('connection', (ws) => {
                 };
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   ...res,
@@ -759,7 +762,7 @@ wss.on('connection', (ws) => {
             setTimeout(() => {
               ws.send(
                 api.Command.encode(
-                  new api.Command({
+                  api.Command.create({
                     channel: msg.channel,
                     state: api.State.Stopped,
                   })
@@ -778,7 +781,7 @@ wss.on('connection', (ws) => {
         (err, files) => {
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 files: {
@@ -822,7 +825,7 @@ wss.on('connection', (ws) => {
         if (file in channels[msg.channel].subscriptions) {
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 ok: {},
@@ -846,7 +849,7 @@ wss.on('connection', (ws) => {
                   if (e == 'rename') {
                     ws.send(
                       api.Command.encode(
-                        new api.Command({
+                        api.Command.create({
                           channel: msg.channel,
                           fileEvent: {
                             file: {
@@ -864,7 +867,7 @@ wss.on('connection', (ws) => {
 
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   ok: {},
@@ -874,7 +877,7 @@ wss.on('connection', (ws) => {
           } catch (err) {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   error: `unable to subscribe file from fsevents: ${err.message}`,
@@ -887,7 +890,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             ok: {},
@@ -912,7 +915,7 @@ wss.on('connection', (ws) => {
 
           wsIter.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: chanId,
                 session: -sessionId,
                 fileOpened: {
@@ -932,7 +935,7 @@ wss.on('connection', (ws) => {
       );
       sessions[msg.followUser.session].ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             session: msg.followUser.session,
             followUser: {
@@ -949,7 +952,7 @@ wss.on('connection', (ws) => {
       );
       sessions[msg.unfollowUser.session].ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             session: msg.unfollowUser.session,
             unfollowUser: {
@@ -966,7 +969,7 @@ wss.on('connection', (ws) => {
           if (err.code == 'ENOENT') {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
@@ -977,7 +980,7 @@ wss.on('connection', (ws) => {
           } else {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
@@ -1027,7 +1030,7 @@ wss.on('connection', (ws) => {
         if (err) {
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 error: `unable to write file content from gcsfiles: ${err.message}`,
@@ -1037,7 +1040,7 @@ wss.on('connection', (ws) => {
         } else {
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 ok: {},
@@ -1054,7 +1057,7 @@ wss.on('connection', (ws) => {
           if (err) {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   error: `unable to read file content from ot: open ${path}: no such file or directory`,
@@ -1093,7 +1096,7 @@ wss.on('connection', (ws) => {
 
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 session: sessionId,
@@ -1110,7 +1113,7 @@ wss.on('connection', (ws) => {
           setTimeout(() => {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   ok: {},
@@ -1144,7 +1147,7 @@ wss.on('connection', (ws) => {
 
                 ws.send(
                   api.Command.encode(
-                    new api.Command({
+                    api.Command.create({
                       channel: msg.channel,
                       otNewCursor: cursor,
                     })
@@ -1186,7 +1189,7 @@ wss.on('connection', (ws) => {
                   // Send to client
                   ws.send(
                     api.Command.encode(
-                      new api.Command({
+                      api.Command.create({
                         channel: msg.channel,
                         ot: packet,
                       })
@@ -1250,7 +1253,7 @@ wss.on('connection', (ws) => {
 
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
@@ -1278,7 +1281,7 @@ wss.on('connection', (ws) => {
             setTimeout(() => {
               ws.send(
                 api.Command.encode(
-                  new api.Command({
+                  api.Command.create({
                     channel: msg.channel,
                     ref: msg.ref,
                     session: sessionId,
@@ -1290,7 +1293,7 @@ wss.on('connection', (ws) => {
           } catch (err) {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
@@ -1314,7 +1317,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
@@ -1329,7 +1332,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
@@ -1351,7 +1354,7 @@ wss.on('connection', (ws) => {
 
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 ref: msg.ref,
                 ok: {},
@@ -1369,7 +1372,7 @@ wss.on('connection', (ws) => {
 
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               ref: msg.ref,
               ok: {},
@@ -1384,7 +1387,7 @@ wss.on('connection', (ws) => {
 
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               ref: msg.ref,
               ok: {},
@@ -1400,7 +1403,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             ok: {},
@@ -1432,7 +1435,7 @@ wss.on('connection', (ws) => {
     } else if (msg.toolchainGetRequest) {
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
@@ -1474,7 +1477,7 @@ wss.on('connection', (ws) => {
     } else if (msg.nixModulesGetRequest) {
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
@@ -1485,7 +1488,7 @@ wss.on('connection', (ws) => {
     } else if (msg.runConfigGetRequest) {
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
@@ -1502,7 +1505,7 @@ wss.on('connection', (ws) => {
     } else if (msg.dotReplitGetRequest) {
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             ref: msg.ref,
             session: sessionId,
@@ -1529,7 +1532,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.Command({
+          api.Command.create({
             channel: msg.channel,
             state: api.State.Running,
           })
@@ -1545,7 +1548,7 @@ wss.on('connection', (ws) => {
 
           ws.send(
             api.Command.encode(
-              new api.Command({
+              api.Command.create({
                 channel: msg.channel,
                 state: api.State.Stopped,
               })
@@ -1559,7 +1562,7 @@ wss.on('connection', (ws) => {
 
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               output: `${dotReplit.run || dotReplitDefaultRunCommand}\r`,
             })
@@ -1576,7 +1579,7 @@ wss.on('connection', (ws) => {
       for (const { ws: wsIter } of Object.values(sessions)) {
         wsIter.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               session: -sessionId,
               chatMessage: msg.chatMessage,
@@ -1628,7 +1631,7 @@ wss.on('connection', (ws) => {
       channels[msg.channel].process.on('spawn', () => {
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               ref: msg.ref,
               session: sessionId,
@@ -1641,7 +1644,7 @@ wss.on('connection', (ws) => {
       channels[msg.channel].process.on('data', (data) => {
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               output: data.toString('utf-8'),
             })
@@ -1656,7 +1659,7 @@ wss.on('connection', (ws) => {
           if (err.code == 'ENOENT') {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
@@ -1667,7 +1670,7 @@ wss.on('connection', (ws) => {
           } else {
             ws.send(
               api.Command.encode(
-                new api.Command({
+                api.Command.create({
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
@@ -1681,7 +1684,7 @@ wss.on('connection', (ws) => {
 
         ws.send(
           api.Command.encode(
-            new api.Command({
+            api.Command.create({
               channel: msg.channel,
               ref: msg.ref,
               session: sessionId,
@@ -1700,7 +1703,7 @@ wss.on('connection', (ws) => {
     }
   });
 
-  const container = new api.Command();
+  const container = api.Command.create();
   container.containerState = new api.ContainerState();
   container.containerState.state = api.ContainerState.State.READY;
 
@@ -1708,7 +1711,7 @@ wss.on('connection', (ws) => {
 
   ws.send(
     api.Command.encode(
-      new api.Command({
+      api.Command.create({
         channel: 0,
         bootStatus: {
           stage: api.BootStatus.Stage.COMPLETE,
@@ -1719,7 +1722,7 @@ wss.on('connection', (ws) => {
 
   ws.send(
     api.Command.encode(
-      new api.Command({
+      api.Command.create({
         channel: 0,
         toast: {
           text:
