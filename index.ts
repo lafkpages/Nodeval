@@ -411,11 +411,6 @@ wss.on('connection', (ws) => {
       msg = api.Command.decode(rawMsg);
     }
 
-    if (msg.channel) {
-      msg._service = channels[msg.channel].openChan.service;
-      msg._chanName = channels[msg.channel].openChan.name;
-    }
-
     if (msg.ping) {
       ws.send(
         api.Command.encode(
@@ -526,7 +521,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.closeChan) {
-      switch (msg._service) {
+      switch (channels[msg.channel].openChan.service) {
         case 'ot':
           if (channels[msg.closeChan.id].subscriptions) {
             for (const [path, watcher] of Object.entries(
@@ -544,7 +539,7 @@ wss.on('connection', (ws) => {
       console.log(
         'Closing channel ID',
         msg.closeChan.id,
-        `with service "${msg._service}":`,
+        `with service "${channels[msg.channel].openChan.service}":`,
         msg.closeChan.action
       );
 
