@@ -29,6 +29,7 @@ const {
   cmdStringToArgs,
 } = require('./util/cmdArgs');
 const { bitsToAscii: permissionBitsToAscii } = require('./util/permissions');
+const { showUsage } = require('./util/usage');
 
 dotenv.config();
 
@@ -53,7 +54,10 @@ const args = arg({
   '-r': '--repl-id',
 });
 
-if (args['--version']) {
+if (args['--help']) {
+  showUsage();
+  process.exit(0);
+} else if (args['--version']) {
   console.log(package.version);
   process.exit(0);
 }
