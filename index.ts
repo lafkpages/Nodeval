@@ -30,6 +30,8 @@ import { showUsage } from './util/usage';
 
 // Types
 import type { DotReplit, Cursor } from './types';
+import type { IPty } from 'node-pty';
+import type { ChildProcess } from 'child_process';
 import type { api as ReplitProtocol } from '@replit/protocol';
 
 dotenv.config();
@@ -49,7 +51,7 @@ const args = arg({
   '-r': '--repl-id',
 });
 
-const port = args['--port'] || parseInt(process.env.NODEVAL_PORT) || 4096;
+const port = args['--port'] || parseInt(process.env.NODEVAL_PORT || '') || 4096;
 const shell =
   process.env.NODEVAL_SHELL ||
   (platform == 'win32' ? 'powershell.exe' : 'bash');
@@ -89,7 +91,7 @@ const wss = new WebSocketServer({ port });
 
 let lastSessId = 1;
 let replId = nodevalReplId;
-let replUrl = null;
+let replUrl: string | null = null;
 
 // Create .env
 fs.writeFile('.env', '', { flag: 'wx' }, () => {});
@@ -115,7 +117,9 @@ try {
 } catch {}
 
 // Warn the user if a configured LSP server isn't installed
-let hasWarnedForLsp = {};
+let hasWarnedForLsp: {
+  [lang: string]: boolean;
+} = {};
 
 // dotReplit config
 let dotReplit: DotReplit = {};
@@ -188,7 +192,7 @@ loadDotReplit().then(() => {
 setInterval(loadDotReplit, 5000);
 
 // Get current TTY
-let currentTty = null;
+let currentTty: string | null = null;
 
 try {
   currentTty = execSync('tty', {
@@ -210,7 +214,7 @@ function randomStr() {
 function startPty(
   sessionId: number,
   chanId: number,
-  ws,
+  ws: WebSocket,
   infoCallback: () => [string, string, number, string]
 ) {
   const [replId, username, userId, replUrl] = infoCallback();
@@ -243,7 +247,7 @@ function startPty(
     },
   });
 
-  channels[chanId].process.on('data', (output) => {
+  channels[chanId].process!.on('data', (output) => {
     if (channels[chanId].processPtyDev) {
       if (channels[chanId].showOutput) {
         ws.send(
@@ -288,7 +292,7 @@ function startPty(
   });
 }
 
-function makeTimestamp(now = null) {
+function makeTimestamp(now: number | null = null) {
   now = now || Date.now();
   return {
     seconds: Math.floor(now / 1000).toString(),
@@ -297,7 +301,7 @@ function makeTimestamp(now = null) {
 }
 
 // Import previous file history
-const fileHistory = require('./.file-history.json');
+import * as fileHistory from './.file-history.json';
 
 // Session to WS map
 const sessions: {
@@ -316,8 +320,8 @@ const sessions: {
           cursors: Cursor[];
         };
         flushing?: boolean;
-        process?: any; // TODO: node-pty or ChildProcess
-        processPtyDev?: string;
+        process?: IPty | ChildProcess; // TODO: node-pty or ChildProcess
+        processPtyDev?: string | null;
         showOutput?: boolean;
       };
     };
