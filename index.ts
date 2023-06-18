@@ -1098,9 +1098,12 @@ wss.on('connection', (ws) => {
 
               console.log('Created initial version of', path);
             }
+            
+            // TODO: check if otstatus is undefined
+            // For now, we assume that it is defined
 
-            channels[msg.channel].otstatus.linkedFile = path;
-            channels[msg.channel].otstatus.version =
+            channels[msg.channel].otstatus!.linkedFile = path;
+            channels[msg.channel].otstatus!.version =
               fileHistory[path].versions.length;
 
             ws.send(
@@ -1113,7 +1116,7 @@ wss.on('connection', (ws) => {
                     version: fileHistory[path].versions.length,
                     linkedFile: {
                       path: path,
-                      content: data.toString('base64'),
+                      content: new Uint8Array(data),
                     },
                   },
                 })
