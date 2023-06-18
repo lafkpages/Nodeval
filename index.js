@@ -2,6 +2,7 @@ const { makeConsoleSafe } = require('safe-logging-replit');
 makeConsoleSafe(console);
 
 const package = require('./package.json');
+const arg = require('arg');
 const os = require('os');
 const osUtils = require('os-utils');
 const { WebSocketServer } = require('ws');
@@ -38,6 +39,24 @@ const shell =
   process.env.NODEVAL_SHELL ||
   (platform == 'win32' ? 'powershell.exe' : 'bash');
 const nodevalReplId = process.env.NODEVAL_REPL_ID || null;
+
+const args = arg({
+  '--help': Boolean,
+  '--version': Boolean,
+
+  '--port': Number,
+  '--repl-id': String,
+
+  '-h': '--help',
+  '-V': '--version',
+  '-p': '--port',
+  '-r': '--repl-id',
+});
+
+if (args['--version']) {
+  console.log(package.version);
+  process.exit(0);
+}
 
 if (!nodevalReplId) {
   console.warn(
