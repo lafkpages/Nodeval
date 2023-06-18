@@ -214,7 +214,9 @@ function startPty(
   sessionId: number,
   chanId: number,
   ws: WebSocket,
-  infoCallback: () => [string, string, number, string]
+  infoCallback: () => [
+    string | null, string | null, number | null, string | null
+  ]
 ) {
   const [replId, username, userId, replUrl] = infoCallback();
   const channels = sessions[sessionId].channels;
@@ -397,8 +399,15 @@ wss.on('connection', (ws) => {
     ws.isAlive = true;
   });
 
-  ws.on('message', (msg) => {
-    msg = api.Command.decode(msg);
+  ws.on('message', (rawMsg) => {
+    let msg: ReplitProtocol.Command;
+    if (rawMsg instanceof ArrayBuffer) {
+      msg = api.Command.decode(new Uint8Array(rawMsg));
+    } else if (rawMsg instanceof Array) {
+      throw new TypeError('Got Array in WebSocket message (TODO)');
+    } else {
+      msg = api.Command.decode(rawMsg);
+    }
 
     if (msg.channel) {
       msg._service = channels[msg.channel].openChan.service;
@@ -539,7 +548,7 @@ wss.on('connection', (ws) => {
 
       ws.send(
         api.Command.encode(
-          new api.CloseChannelRes({
+          api.Command.create({
             channel: 0,
             ref: msg.ref,
             closeChanRes: {
