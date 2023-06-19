@@ -1,3 +1,5 @@
+import type { api as ReplitProtocol } from '@replit/protocol';
+
 export interface OTv1 {
   insert?: string | null;
   delete?: number | null;
@@ -10,7 +12,7 @@ export interface OTv2 {
   count?: number;
 }
 
-export type OT = OTv1 | OTv2;
+export type OT = OTv1 | OTv2 | ReplitProtocol.OTOpComponent;
 
 export interface Diff {
   added?: boolean;

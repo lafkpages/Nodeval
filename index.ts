@@ -1691,7 +1691,7 @@ wss.on('connection', (ws) => {
         );
       });
 
-      channels[msg.channel].process.on('data', (data) => {
+      channels[msg.channel].process!.on('data', (data) => { // TODO: data type
         ws.send(
           api.Command.encode(
             api.Command.create({
@@ -1740,9 +1740,9 @@ wss.on('connection', (ws) => {
               session: sessionId,
               statRes: {
                 exists: true,
-                size: stats.size.toString(),
+                size: stats.size,
                 fileMode: permissionBitsToAscii(stats.mode),
-                modTime: Math.floor(stats.mtimeMs / 1000).toString(),
+                modTime: Math.floor(stats.mtimeMs / 1000),
               },
             })
           ).finish()
@@ -1753,11 +1753,11 @@ wss.on('connection', (ws) => {
     }
   });
 
-  const container = api.Command.create();
-  container.containerState = new api.ContainerState();
-  container.containerState.state = api.ContainerState.State.READY;
-
-  ws.send(api.Command.encode(container).finish());
+  ws.send(api.ContainerState.encode(
+    api.ContainerState.create({
+      state: api.ContainerState.State.READY,
+    })
+  ).finish());
 
   ws.send(
     api.Command.encode(
