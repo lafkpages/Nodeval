@@ -1,6 +1,6 @@
 {
   "name": "nodeval",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "A Replit Goval server in Node",
   "main": "js/index.js",
   "bin": "js/index.js",
