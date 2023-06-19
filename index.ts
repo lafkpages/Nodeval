@@ -1465,14 +1465,14 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.resizeTerm) {
-      if (channels[msg.channel].process && !(channels[msg.channel].process instanceof ChildProcess)) {
-        (channels[msg.channel].process as IPty).resize(
+      if (channels[msg.channel]?.process && !(channels[msg.channel]!.process instanceof ChildProcess)) {
+        (channels[msg.channel]!.process as IPty).resize(
           msg.resizeTerm.cols,
           msg.resizeTerm.rows
         );
       }
     } else if (msg.input) {
-      const proc = channels[msg.channel].process;
+      const proc = channels[msg.channel]?.process;
 
       if (proc) {
         if (proc instanceof ChildProcess) {
