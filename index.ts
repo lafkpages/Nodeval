@@ -427,6 +427,11 @@ wss.on('connection', (ws) => {
       msg = api.Command.decode(rawMsg);
     }
 
+    if (msg.channel && !channels[msg.channel]) {
+      console.warn('Got message for nonexistent channel:', msg.channel);
+      return;
+    }
+
     if (msg.ping) {
       ws.send(
         api.Command.encode(
@@ -537,7 +542,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.closeChan) {
-      switch (channels[msg.channel]?.openChan.service) {
+      switch (channels[msg.channel]!.openChan.service) {
         case 'ot':
           if (channels[msg.closeChan.id]!.subscriptions) {
             for (const [path, watcher] of Object.entries(
@@ -555,7 +560,7 @@ wss.on('connection', (ws) => {
       console.log(
         'Closing channel ID',
         msg.closeChan.id,
-        `with service "${channels[msg.channel]?.openChan.service}":`,
+        `with service "${channels[msg.channel]!.openChan.service}":`,
         msg.closeChan.action
       );
 
@@ -1085,7 +1090,7 @@ wss.on('connection', (ws) => {
         }
       });
     } else if (msg.otLinkFile) {
-      if (channels[msg.channel]?.otstatus) {
+      if (channels[msg.channel]!.otstatus) {
         const path = msg.otLinkFile.file ? normalizePath(msg.otLinkFile.file.path) : null;
 
         if (path) {
@@ -1260,7 +1265,7 @@ wss.on('connection', (ws) => {
         }
       }
     } else if (msg.otNewCursor) {
-      if (channels[msg.channel]?.otstatus) {
+      if (channels[msg.channel]!.otstatus) {
         channels[msg.channel]!.otstatus!.cursors.push({
           position: msg.otNewCursor.position,
           selectionStart: msg.otNewCursor.selectionStart,
@@ -1273,7 +1278,7 @@ wss.on('connection', (ws) => {
         });
       }
     } else if (msg.otDeleteCursor) {
-      if (channels[msg.channel]?.otstatus) {
+      if (channels[msg.channel]!.otstatus) {
         channels[msg.channel]!.otstatus!.cursors = channels[
           msg.channel
         ]!.otstatus!.cursors.filter(
@@ -1471,14 +1476,14 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.resizeTerm) {
-      if (channels[msg.channel]?.process && !(channels[msg.channel]!.process instanceof ChildProcess)) {
+      if (channels[msg.channel]!.process && !(channels[msg.channel]!.process instanceof ChildProcess)) {
         (channels[msg.channel]!.process as IPty).resize(
           msg.resizeTerm.cols,
           msg.resizeTerm.rows
         );
       }
     } else if (msg.input) {
-      const proc = channels[msg.channel]?.process;
+      const proc = channels[msg.channel]!.process;
 
       if (proc) {
         if (proc instanceof ChildProcess) {
@@ -1586,7 +1591,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.runMain) {
-      if (!channels[msg.channel]?.process) {
+      if (!channels[msg.channel]!.process) {
         console.warn('Warning: client tried to run a channel without a process (init)');
         return;
       }
@@ -1651,7 +1656,7 @@ wss.on('connection', (ws) => {
         }, 10);
       }, 100);
     } else if (msg.clear) {
-      if (!channels[msg.channel]?.process) {
+      if (!channels[msg.channel]!.process) {
         console.warn('Warning: client tried to clear a channel without a process');
         return;
       }
