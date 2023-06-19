@@ -30,5 +30,5 @@ export interface Version {
     nanos: number;
   };
   version: number;
-  userId: number;
+  userId: number | null;
 }
