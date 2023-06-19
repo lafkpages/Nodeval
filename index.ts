@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-// const { makeConsoleSafe } = require('safe-logging-replit');
-// makeConsoleSafe(console);
+import { makeConsoleSafe } from 'safe-logging-replit';
 
 import * as _package from './package.json';
 import * as arg from 'arg';
@@ -45,6 +44,7 @@ const args = arg({
 
   '--port': Number,
   '--repl-id': String,
+  '--unsafe-console': Boolean,
 
   '-h': '--help',
   '-V': '--version',
@@ -57,6 +57,10 @@ const shell =
   process.env.NODEVAL_SHELL ||
   (platform == 'win32' ? 'powershell.exe' : 'bash');
 const nodevalReplId = args['--repl-id'] || process.env.NODEVAL_REPL_ID || null;
+
+if (!args['--unsafe-console']) {
+  makeConsoleSafe(console);
+}
 
 if (args['--help']) {
   showUsage();
