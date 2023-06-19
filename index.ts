@@ -1543,6 +1543,11 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.runMain) {
+      if (!channels[msg.channel].process) {
+        console.warn('Warning: client tried to run a channel without a process (init)');
+        return;
+      }
+
       console.log('Running');
 
       ws.send(
@@ -1554,11 +1559,23 @@ wss.on('connection', (ws) => {
         ).finish()
       );
 
-      channels[msg.channel].process.kill();
+      channels[msg.channel].process!.kill();
       channels[msg.channel].showOutput = false;
 
       setTimeout(() => {
-        channels[msg.channel].process.on('exit', () => {
+        if (!channels[msg.channel].process) {
+          console.warn('Warning: client tried to run a channel without a process (run)');
+          return;
+        }
+
+        if (channels[msg.channel].process instanceof ChildProcess) {
+          console.warn('Warning: client tried to run a channel with a process that is not a PTY');
+          return;
+        }
+
+        const pty = channels[msg.channel].process as IPty;
+
+        pty.on('exit', () => {
           console.log('Finished running');
 
           ws.send(
@@ -1571,7 +1588,7 @@ wss.on('connection', (ws) => {
           );
         });
 
-        channels[msg.channel].process.write(
+        pty.write(
           `${ansiClear}${dotReplit.fullRunCommand}\rexit\r`
         );
 
