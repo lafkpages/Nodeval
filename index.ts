@@ -848,7 +848,18 @@ wss.on('connection', (ws) => {
           } else {
             try {
               fs.lstat(filePath, (err, stats) => {
-                // TODO: handle errors
+                if (err) {
+                  ws.send(
+                    api.Command.encode(
+                      api.Command.create({
+                        channel: msg.channel,
+                        ref: msg.ref,
+                        error: err.message,
+                      })
+                    ).finish()
+                  );
+                  return;
+                }
 
                 const fileIsDir = stats.isDirectory();
 
