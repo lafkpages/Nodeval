@@ -542,7 +542,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.closeChan) {
-      switch (channels[msg.channel]!.openChan.service) {
+      switch (channels[msg.closeChan.id]!.openChan.service) { // TODO: check if it exists
         case 'ot':
           if (channels[msg.closeChan.id]!.subscriptions) {
             for (const [path, watcher] of Object.entries(
@@ -554,15 +554,15 @@ wss.on('connection', (ws) => {
           break;
       }
 
-      // TODO: use msg.closeChan.action (DISCONNECT|CLOSE|TRY_CLOSE)
-      delete channels[msg.closeChan.id];
-
       console.log(
         'Closing channel ID',
         msg.closeChan.id,
-        `with service "${channels[msg.channel]!.openChan.service}":`,
+        `with service "${channels[msg.closeChan.id]!.openChan.service}":`,
         msg.closeChan.action
       );
+
+      // TODO: use msg.closeChan.action (DISCONNECT|CLOSE|TRY_CLOSE)
+      delete channels[msg.closeChan.id];
 
       ws.send(
         api.Command.encode(
