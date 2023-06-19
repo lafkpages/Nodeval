@@ -1758,9 +1758,11 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.send(api.ContainerState.encode(
-    api.ContainerState.create({
-      state: api.ContainerState.State.READY,
+  ws.send(api.Command.encode(
+    api.Command.create({
+      containerState: {
+        state: api.ContainerState.State.READY,
+      }
     })
   ).finish());
 
