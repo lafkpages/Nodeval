@@ -1008,7 +1008,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (/*msg.otLinkFile?.file.path || */ msg.read) {
-      const file = /*msg.otLinkFile?.file.path || */ msg.read.path;
+      const file = /*msg.otLinkFile?.file.path || */ msg.read.path; // TODO: normalize path
 
       fs.readFile(file, (err, data) => {
         if (err) {
