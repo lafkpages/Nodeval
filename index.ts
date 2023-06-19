@@ -227,13 +227,17 @@ function startPty(
   const [replId, username, userId, replUrl] = infoCallback();
   const channels = sessions[sessionId].channels;
 
-  channels[chanId].processPtyDev = null;
-
-  if (typeof channels[chanId].showOutput != 'boolean') {
-    channels[chanId].showOutput = true;
+  if (!channels[chanId]) {
+    throw new Error(`startPty: channel ${chanId} does not exist`);
   }
 
-  channels[chanId].process = spawnPty(shell, [], {
+  channels[chanId]!.processPtyDev = null;
+
+  if (typeof channels[chanId]!.showOutput != 'boolean') {
+    channels[chanId]!.showOutput = true;
+  }
+
+  channels[chanId]!.process = spawnPty(shell, [], {
     name: 'xterm-256color',
     cols: 80,
     rows: 24,
@@ -254,9 +258,9 @@ function startPty(
     },
   });
 
-  channels[chanId].process!.on('data', (output: string) => {
-    if (channels[chanId].processPtyDev) {
-      if (channels[chanId].showOutput) {
+  channels[chanId]!.process!.on('data', (output: string) => {
+    if (channels[chanId]!.processPtyDev) {
+      if (channels[chanId]!.showOutput) {
         ws.send(
           api.Command.encode(
             api.Command.create({
@@ -266,7 +270,7 @@ function startPty(
           ).finish()
         );
 
-        if (channels[chanId].openChan.service == 'shellrun2') {
+        if (channels[chanId]!.openChan.service == 'shellrun2') {
           ws.send(
             api.Command.encode(
               api.Command.create({
@@ -281,22 +285,26 @@ function startPty(
       const match = output.match(/^ptyDev:(.+?):ptyDev/m);
 
       if (match) {
-        channels[chanId].processPtyDev = match[1];
+        channels[chanId]!.processPtyDev = match[1];
       }
 
-      console.log('Spawned shell:', channels[chanId].processPtyDev);
+      console.log('Spawned shell:', channels[chanId]!.processPtyDev);
     }
   });
 
   setTimeout(() => {
-    if (channels[chanId].process instanceof ChildProcess) {
+    if (!channels[chanId]?.process) {
       return;
     }
 
-    (channels[chanId].process as IPty).write('echo -n "ptyDev:"`tty`":ptyDev"\r');
+    if (channels[chanId]!.process instanceof ChildProcess) {
+      return;
+    }
+
+    (channels[chanId]!.process as IPty).write('echo -n "ptyDev:"`tty`":ptyDev"\r');
   }, 10);
 
-  channels[chanId].process?.on('exit', () => {
+  channels[chanId]!.process?.on('exit', () => {
     console.log('Shell exited, respawning...');
 
     startPty(sessionId, chanId, ws, infoCallback);
@@ -598,7 +606,7 @@ wss.on('connection', (ws) => {
             // Send join event to all other sessions
             for (const { channels, ws: wsIter } of Object.values(sessions)) {
               for (const [chanId, channel] of Object.entries(channels)) {
-                if (channel.openChan.service != 'presence') {
+                if (channel?.openChan.service != 'presence') {
                   continue;
                 }
 
