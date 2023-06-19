@@ -1535,6 +1535,9 @@ wss.on('connection', (ws) => {
                     ? Object.entries(dotReplit.env).map((entry) => ({
                         key: entry[0],
                         value: entry[1],
+                      } as {
+                        key: string;
+                        value: string;
                       }))
                     : null,
               },
@@ -1606,7 +1609,17 @@ wss.on('connection', (ws) => {
         }, 10);
       }, 100);
     } else if (msg.clear) {
-      channels[msg.channel].process.write(ansiClear);
+      if (!channels[msg.channel].process) {
+        console.warn('Warning: client tried to clear a channel without a process');
+        return;
+      }
+
+      if (channels[msg.channel].process instanceof ChildProcess) {
+        console.warn('Warning: client tried to clear a channel with a process that is not a PTY');
+        return;
+      }
+
+      (channels[msg.channel].process as IPty).write(ansiClear);
     } else if (msg.chatMessage) {
       for (const { ws: wsIter } of Object.values(sessions)) {
         wsIter.send(
@@ -1659,8 +1672,7 @@ wss.on('connection', (ws) => {
       const lspStartCmdArgs = lspStartCmdAllArgs.slice(1);
 
       channels[msg.channel].process = spawn(lspStartCmdName, lspStartCmdArgs);
-
-      channels[msg.channel].process.on('spawn', () => {
+      channels[msg.channel].process!.on('spawn', () => {
         ws.send(
           api.Command.encode(
             api.Command.create({
