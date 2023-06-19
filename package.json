@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "build": "rm -rf js && tsc",
     "dev": "rm -rf js && tsc && node js/index.js",
-    "pkg": "rm dist/*; npx pkg ."
+    "pkg": "npm run build; rm dist/*; npx pkg ."
   },
   "pkg": {
     "assets": [],
