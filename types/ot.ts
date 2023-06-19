@@ -1,7 +1,7 @@
 export interface OTv1 {
-  insert?: string;
-  delete?: number;
-  skip?: number;
+  insert?: string | null;
+  delete?: number | null;
+  skip?: number | null;
 }
 
 export interface OTv2 {

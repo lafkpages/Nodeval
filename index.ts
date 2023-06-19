@@ -1155,7 +1155,7 @@ wss.on('connection', (ws) => {
                     id: cursorId,
                   };
 
-                  channels[msg.channel].otstatus.cursors.push(cursor);
+                  channels[msg.channel].otstatus!.cursors.push(cursor);
 
                   ws.send(
                     api.Command.encode(
@@ -1214,7 +1214,12 @@ wss.on('connection', (ws) => {
                 }
               }
             });
-            channels[msg.channel].subscriptions[path] = watcher;
+
+            if (!channels[msg.channel].subscriptions) {
+              channels[msg.channel].subscriptions = {};
+            }
+
+            channels[msg.channel].subscriptions![path] = watcher;
           });
         } else {
           // TODO: handle missing path
@@ -1222,13 +1227,13 @@ wss.on('connection', (ws) => {
       }
     } else if (msg.otNewCursor) {
       if (channels[msg.channel].otstatus) {
-        channels[msg.channel].otstatus.cursors.push({
+        channels[msg.channel].otstatus!.cursors.push({
           position: msg.otNewCursor.position,
           selectionStart: msg.otNewCursor.selectionStart,
           selectionEnd: msg.otNewCursor.selectionEnd,
           user: {
-            id: msg.otNewCursor.user.id,
-            name: msg.otNewCursor.user.name,
+            id: msg.otNewCursor.user?.id,
+            name: msg.otNewCursor.user?.name || username || '',
           },
           id: msg.otNewCursor.id,
         });
@@ -1238,7 +1243,7 @@ wss.on('connection', (ws) => {
         channels[msg.channel].otstatus!.cursors = channels[
           msg.channel
         ].otstatus!.cursors.filter(
-          (cursor) => cursor.id != msg.otDeleteCursor.id
+          (cursor) => cursor.id != msg.otDeleteCursor!.id
         );
       }
     } else if (msg.ot) {
@@ -1250,14 +1255,14 @@ wss.on('connection', (ws) => {
           // TODO: handle errors
 
           try {
-            const newFile = applyOTs(data, msg.ot.op, 0, true);
+            const newFile = applyOTs(data, msg.ot!.op, 0, true);
             const now = Date.now();
 
             const newVersion = fileHistory[file].versions.length + 1;
 
             const packet = {
               spookyVersion: newVersion,
-              op: msg.ot.op,
+              op: msg.ot!.op,
               crc32: crc32(newFile.file),
               comitted: makeTimestamp(now),
               version: newVersion,
@@ -1312,7 +1317,7 @@ wss.on('connection', (ws) => {
                   channel: msg.channel,
                   ref: msg.ref,
                   session: sessionId,
-                  error: err.message,
+                  error: err instanceof Error ? err.message : err?.toString(),
                 })
               ).finish()
             );
@@ -1320,9 +1325,14 @@ wss.on('connection', (ws) => {
         });
       }
     } else if (msg.otFetchRequest) {
+      if (!channels[msg.channel].otstatus?.linkedFile) {
+        console.warn('Warning: tried to get file history from non-linked file');
+        return;
+      }
+
       // TODO: don't ignore versionFrom and versionTo
 
-      const path = normalizePath(channels[msg.channel].otstatus?.linkedFile);
+      const path = normalizePath(channels[msg.channel].otstatus!.linkedFile!);
 
       console.log(
         'Got',
@@ -1365,7 +1375,7 @@ wss.on('connection', (ws) => {
         (err) => {
           // TODO: handle errors
 
-          console.log('Removed file', msg.remove.path);
+          console.log('Removed file', msg.remove!.path);
 
           ws.send(
             api.Command.encode(
@@ -1383,7 +1393,7 @@ wss.on('connection', (ws) => {
       fs.rename(msg.move.oldPath, msg.move.newPath, (err) => {
         // TODO: handle errors
 
-        console.log(`Renamed ${msg.move.oldPath} to ${msg.move.newPath}`);
+        console.log(`Renamed ${msg.move!.oldPath} to ${msg.move!.newPath}`);
 
         ws.send(
           api.Command.encode(
@@ -1437,14 +1447,10 @@ wss.on('connection', (ws) => {
       const proc = channels[msg.channel].process;
 
       if (proc) {
-        if (proc.stdin?.write) {
-          proc.stdin.write(msg.input);
+        if (proc instanceof ChildProcess) {
+          proc.stdin?.write(msg.input);
         } else if (proc.write) {
           proc.write(msg.input);
-        } else {
-          console.warn(
-            'Warning: client tried to write to a channel without a writable process'
-          );
         }
       }
     } else if (msg.toolchainGetRequest) {
