@@ -1085,11 +1085,15 @@ wss.on('connection', (ws) => {
         }
       });
     } else if (msg.otLinkFile) {
-      if (channels[msg.channel].otstatus) {
+      if (channels[msg.channel]?.otstatus) {
         const path = msg.otLinkFile.file ? normalizePath(msg.otLinkFile.file.path) : null;
 
         if (path) {
           fs.readFile(path, (err, data) => {
+            if (!channels[msg.channel]) {
+              return;
+            }
+
             if (err) {
               ws.send(
                 api.Command.encode(
@@ -1129,8 +1133,8 @@ wss.on('connection', (ws) => {
             // TODO: check if otstatus is undefined
             // For now, we assume that it is defined
 
-            channels[msg.channel].otstatus!.linkedFile = path;
-            channels[msg.channel].otstatus!.version =
+            channels[msg.channel]!.otstatus!.linkedFile = path;
+            channels[msg.channel]!.otstatus!.version =
               fileHistory[path].versions.length;
 
             ws.send(
@@ -1170,7 +1174,7 @@ wss.on('connection', (ws) => {
 
               if (e == 'change') {
                 // Check if change is because of flushing OTs
-                if (!channels[msg.channel].flushing) {
+                if (!channels[msg.channel]?.flushing) {
                   const cursorId = randomStr();
                   const cursor = {
                     position: 0,
@@ -1182,7 +1186,9 @@ wss.on('connection', (ws) => {
                     id: cursorId,
                   };
 
-                  channels[msg.channel].otstatus!.cursors.push(cursor);
+                  if (channels[msg.channel]?.otstatus) {
+                    channels[msg.channel]!.otstatus!.cursors.push(cursor);
+                  }
 
                   ws.send(
                     api.Command.encode(
@@ -1243,11 +1249,11 @@ wss.on('connection', (ws) => {
               }
             });
 
-            if (!channels[msg.channel].subscriptions) {
-              channels[msg.channel].subscriptions = {};
+            if (!channels[msg.channel]!.subscriptions) {
+              channels[msg.channel]!.subscriptions = {};
             }
 
-            channels[msg.channel].subscriptions![path] = watcher;
+            channels[msg.channel]!.subscriptions![path] = watcher;
           });
         } else {
           // TODO: handle missing path
