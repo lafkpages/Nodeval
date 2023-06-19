@@ -58,6 +58,8 @@ const shell =
   (platform == 'win32' ? 'powershell.exe' : 'bash');
 const nodevalReplId = args['--repl-id'] || process.env.NODEVAL_REPL_ID || null;
 
+const govalIdentFile = '.config/goval/info';
+
 if (!args['--unsafe-console']) {
   makeConsoleSafe(console);
 }
@@ -1008,7 +1010,8 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (/*msg.otLinkFile?.file.path || */ msg.read) {
-      const file = /*msg.otLinkFile?.file.path || */ msg.read.path; // TODO: normalize path
+      const origFile = /*msg.otLinkFile?.file.path || */ msg.read.path; // TODO: normalize path
+      const file = origFile == govalIdentFile ? 'goval-server-info.json' : origFile;
 
       fs.readFile(file, (err, data) => {
         if (err) {

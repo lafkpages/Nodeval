@@ -1,0 +1,4 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Goval-Community/goval-ident-schema/main/schema.jsonc",
+  "server": "nodeval"
+}
