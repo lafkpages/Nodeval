@@ -1254,8 +1254,8 @@ wss.on('connection', (ws) => {
         }
       }
     } else if (msg.otNewCursor) {
-      if (channels[msg.channel].otstatus) {
-        channels[msg.channel].otstatus!.cursors.push({
+      if (channels[msg.channel]?.otstatus) {
+        channels[msg.channel]!.otstatus!.cursors.push({
           position: msg.otNewCursor.position,
           selectionStart: msg.otNewCursor.selectionStart,
           selectionEnd: msg.otNewCursor.selectionEnd,
@@ -1267,10 +1267,10 @@ wss.on('connection', (ws) => {
         });
       }
     } else if (msg.otDeleteCursor) {
-      if (channels[msg.channel].otstatus) {
-        channels[msg.channel].otstatus!.cursors = channels[
+      if (channels[msg.channel]?.otstatus) {
+        channels[msg.channel]!.otstatus!.cursors = channels[
           msg.channel
-        ].otstatus!.cursors.filter(
+        ]!.otstatus!.cursors.filter(
           (cursor) => cursor.id != msg.otDeleteCursor!.id
         );
       }
