@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { makeConsoleSafe } = require('safe-logging-replit');
-makeConsoleSafe(console);
+// const { makeConsoleSafe } = require('safe-logging-replit');
+// makeConsoleSafe(console);
 
 import * as _package from './package.json';
 import * as arg from 'arg';
@@ -334,7 +334,7 @@ const sessions: {
         process?: IPty | ChildProcess; // TODO: node-pty or ChildProcess
         processPtyDev?: string | null;
         showOutput?: boolean;
-      };
+      } | undefined;
     };
     userId: number | null;
     username: string | null;
@@ -378,7 +378,7 @@ wss.on('connection', (ws) => {
     // Send leave event to all other sessions
     for (const { channels, ws: wsIter } of Object.values(sessions)) {
       for (const [chanId, channel] of Object.entries(channels)) {
-        if (channel.openChan.service != 'presence') {
+        if (channel?.openChan.service != 'presence') {
           continue;
         }
 
@@ -440,7 +440,7 @@ wss.on('connection', (ws) => {
 
       switch (msg.openChan.service) {
         case 'fsevents':
-          channels[chanId].subscriptions = {};
+          channels[chanId]!.subscriptions = {};
           break;
 
         case 'shell':
@@ -465,8 +465,8 @@ wss.on('connection', (ws) => {
           break;
 
         case 'ot':
-          channels[chanId].subscriptions = {};
-          channels[chanId].otstatus = {
+          channels[chanId]!.subscriptions = {};
+          channels[chanId]!.otstatus = {
             content: '',
             version: 0,
             linkedFile: null,
@@ -478,7 +478,7 @@ wss.on('connection', (ws) => {
                 api.Command.create({
                   channel: chanId,
                   ref: msg.ref,
-                  otstatus: channels[chanId].otstatus,
+                  otstatus: channels[chanId]!.otstatus,
                 })
               ).finish()
             );
@@ -525,11 +525,11 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.closeChan) {
-      switch (channels[msg.channel].openChan.service) {
+      switch (channels[msg.channel]?.openChan.service) {
         case 'ot':
-          if (channels[msg.closeChan.id].subscriptions) {
+          if (channels[msg.closeChan.id]!.subscriptions) {
             for (const [path, watcher] of Object.entries(
-              channels[msg.closeChan.id].subscriptions!
+              channels[msg.closeChan.id]!.subscriptions!
             )) {
               watcher.close();
             }
@@ -543,7 +543,7 @@ wss.on('connection', (ws) => {
       console.log(
         'Closing channel ID',
         msg.closeChan.id,
-        `with service "${channels[msg.channel].openChan.service}":`,
+        `with service "${channels[msg.channel]?.openChan.service}":`,
         msg.closeChan.action
       );
 
