@@ -29,7 +29,7 @@
     "minimatch": "^9.0.1",
     "node-pty": "^0.10.1",
     "os-utils": "^0.0.14",
-    "replit-graphql": "^3.0.3",
+    "replit-graphql": "^3.0.5",
     "safe-logging-replit": "^1.2.7",
     "toml": "^3.0.0",
     "ws": "^8.11.0"
