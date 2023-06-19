@@ -31,7 +31,7 @@ import { bitsToAscii as permissionBitsToAscii } from './util/permissions';
 import { showUsage } from './util/usage';
 
 // Types
-import type { DotReplit, Cursor } from './types';
+import type { DotReplit, Cursor, Version } from './types';
 import type { IPty } from 'node-pty';
 import type { api as ReplitProtocol } from '@replit/protocol';
 
@@ -308,7 +308,11 @@ function makeTimestamp(now: number | null = null) {
 }
 
 // Import previous file history
-const fileHistory = require(process.cwd() + '/.file-history.json');
+const fileHistory: {
+  [file: string]: {
+    versions: Version[];
+  };
+} = require(process.cwd() + '/.file-history.json');
 
 // Session to WS map
 const sessions: {
