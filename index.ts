@@ -851,8 +851,8 @@ wss.on('connection', (ws) => {
       for (const file of msg.subscribeFile.files) {
         const filePath = file.path;
 
-        if (channels[msg.channel].subscriptions) {
-          if (filePath in channels[msg.channel].subscriptions!) {
+        if (channels[msg.channel]!.subscriptions) {
+          if (filePath in channels[msg.channel]!.subscriptions!) {
             ws.send(
               api.Command.encode(
                 api.Command.create({
@@ -865,6 +865,10 @@ wss.on('connection', (ws) => {
           } else {
             try {
               fs.lstat(filePath, (err, stats) => {
+                if (!channels[msg.channel]) {
+                  return;
+                }
+
                 if (err) {
                   ws.send(
                     api.Command.encode(
@@ -880,7 +884,7 @@ wss.on('connection', (ws) => {
 
                 const fileIsDir = stats.isDirectory();
 
-                channels[msg.channel].subscriptions![filePath] = fs.watch(
+                channels[msg.channel]!.subscriptions![filePath] = fs.watch(
                   filePath,
                   (e, filename) => {
                     const filenamePath = fileIsDir
@@ -951,7 +955,7 @@ wss.on('connection', (ws) => {
 
       for (const { channels, ws: wsIter } of Object.values(sessions)) {
         for (const [chanId, channel] of Object.entries(channels)) {
-          if (channel.openChan.service != 'presence') {
+          if (channel?.openChan.service != 'presence') {
             continue;
           }
 
@@ -1286,11 +1290,15 @@ wss.on('connection', (ws) => {
         );
       }
     } else if (msg.ot) {
-      const file = channels[msg.channel].otstatus?.linkedFile
-        ? normalizePath(channels[msg.channel].otstatus!.linkedFile!) : null;
+      const file = channels[msg.channel]!.otstatus?.linkedFile
+        ? normalizePath(channels[msg.channel]!.otstatus!.linkedFile!) : null;
 
       if (file) {
         fs.readFile(file, 'utf-8', (err, data) => {
+          if (!channels[msg.channel]) {
+            return;
+          }
+
           // TODO: handle errors
 
           try {
@@ -1323,7 +1331,7 @@ wss.on('connection', (ws) => {
 
             // Prevent the watch file handler from
             // otLinkFile from firing
-            channels[msg.channel].flushing = true;
+            channels[msg.channel]!.flushing = true;
 
             fs.writeFile(file, newFile.file, 'utf-8', (err) => {
               // TODO: handle errors
@@ -1332,7 +1340,7 @@ wss.on('connection', (ws) => {
 
               setTimeout(() => {
                 if (channels[msg.channel]) {
-                  channels[msg.channel].flushing = false;
+                  channels[msg.channel]!.flushing = false;
                 }
               }, 100);
             });
@@ -1364,14 +1372,14 @@ wss.on('connection', (ws) => {
         });
       }
     } else if (msg.otFetchRequest) {
-      if (!channels[msg.channel].otstatus?.linkedFile) {
+      if (!channels[msg.channel]!.otstatus?.linkedFile) {
         console.warn('Warning: tried to get file history from non-linked file');
         return;
       }
 
       // TODO: don't ignore versionFrom and versionTo
 
-      const path = normalizePath(channels[msg.channel].otstatus!.linkedFile!);
+      const path = normalizePath(channels[msg.channel]!.otstatus!.linkedFile!);
 
       console.log(
         'Got',
