@@ -323,7 +323,7 @@ const sessions: {
         otstatus?: {
           content: string;
           version: number;
-          linkedFile: {} | null;
+          linkedFile: string | null;
           cursors: Cursor[];
         };
         flushing?: boolean;
@@ -1235,15 +1235,15 @@ wss.on('connection', (ws) => {
       }
     } else if (msg.otDeleteCursor) {
       if (channels[msg.channel].otstatus) {
-        channels[msg.channel].otstatus.cursors = channels[
+        channels[msg.channel].otstatus!.cursors = channels[
           msg.channel
-        ].otstatus.cursors.filter(
+        ].otstatus!.cursors.filter(
           (cursor) => cursor.id != msg.otDeleteCursor.id
         );
       }
     } else if (msg.ot) {
-      const file =
-        normalizePath(channels[msg.channel].otstatus?.linkedFile) || null;
+      const file = channels[msg.channel].otstatus?.linkedFile
+        ? normalizePath(channels[msg.channel].otstatus!.linkedFile!) : null;
 
       if (file) {
         fs.readFile(file, 'utf-8', (err, data) => {
