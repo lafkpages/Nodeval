@@ -1580,7 +1580,7 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.runMain) {
-      if (!channels[msg.channel].process) {
+      if (!channels[msg.channel]?.process) {
         console.warn('Warning: client tried to run a channel without a process (init)');
         return;
       }
@@ -1596,21 +1596,21 @@ wss.on('connection', (ws) => {
         ).finish()
       );
 
-      channels[msg.channel].process!.kill();
-      channels[msg.channel].showOutput = false;
+      channels[msg.channel]!.process!.kill();
+      channels[msg.channel]!.showOutput = false;
 
       setTimeout(() => {
-        if (!channels[msg.channel].process) {
+        if (!channels[msg.channel]?.process) {
           console.warn('Warning: client tried to run a channel without a process (run)');
           return;
         }
 
-        if (channels[msg.channel].process instanceof ChildProcess) {
+        if (channels[msg.channel]!.process instanceof ChildProcess) {
           console.warn('Warning: client tried to run a channel with a process that is not a PTY');
           return;
         }
 
-        const pty = channels[msg.channel].process as IPty;
+        const pty = channels[msg.channel]!.process as IPty;
 
         pty.on('exit', () => {
           console.log('Finished running');
@@ -1639,21 +1639,23 @@ wss.on('connection', (ws) => {
         );
 
         setTimeout(() => {
-          channels[msg.channel].showOutput = true;
+          if (channels[msg.channel]) {
+            channels[msg.channel]!.showOutput = true;
+          }
         }, 10);
       }, 100);
     } else if (msg.clear) {
-      if (!channels[msg.channel].process) {
+      if (!channels[msg.channel]?.process) {
         console.warn('Warning: client tried to clear a channel without a process');
         return;
       }
 
-      if (channels[msg.channel].process instanceof ChildProcess) {
+      if (channels[msg.channel]!.process instanceof ChildProcess) {
         console.warn('Warning: client tried to clear a channel with a process that is not a PTY');
         return;
       }
 
-      (channels[msg.channel].process as IPty).write(ansiClear);
+      (channels[msg.channel]!.process as IPty).write(ansiClear);
     } else if (msg.chatMessage) {
       for (const { ws: wsIter } of Object.values(sessions)) {
         wsIter.send(
