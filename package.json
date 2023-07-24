@@ -24,7 +24,7 @@
   "author": "LuisAFK",
   "license": "GPL-3.0",
   "dependencies": {
-    "@replit/protocol": "^0.3.12",
+    "@replit/protocol": "^0.3.19",
     "arg": "^5.0.2",
     "crc": "^4.3.2",
     "diff": "^5.1.0",
