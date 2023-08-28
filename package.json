@@ -43,6 +43,6 @@
     "@types/os-utils": "^0.0.1",
     "@types/ws": "^8.5.5",
     "prettier": "2.8.8",
-    "typescript": "^5.1.6"
+    "typescript": "^5.2.2"
   }
 }
