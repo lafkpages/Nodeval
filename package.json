@@ -42,6 +42,7 @@
     "@types/diff": "^5.0.3",
     "@types/os-utils": "^0.0.1",
     "@types/ws": "^8.5.5",
+    "esbuild": "^0.19.4",
     "prettier": "2.8.8",
     "typescript": "^5.1.6"
   }
