@@ -4,3 +4,4 @@
 node_modules
 /test.js
 /js
+pnpm-lock.yaml
