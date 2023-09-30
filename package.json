@@ -4,6 +4,7 @@
   "description": "A Replit Goval server in Node",
   "main": "js/index.js",
   "bin": "js/index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write .",
