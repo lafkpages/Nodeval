@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write .",
     "build": "rm -rf js && esbuild index.ts --outdir=js --platform=node --target=node18 --minify",
-    "dev": "rm -rf js && tsc && node js/index.js",
+    "dev": "pnpm run build && node js/index.js",
     "pkg": "npm run build; rm dist/*; npx pkg ."
   },
   "pkg": {
