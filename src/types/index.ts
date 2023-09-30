@@ -3,7 +3,7 @@ import type { OTv1, OTv2, OT, Diff, Version } from './ot';
 export { OTv1, OTv2, OT, Diff, Version };
 
 export interface DotReplit {
-  run?: string/* | string[]*/;
+  run?: string /* | string[]*/;
   fullRunCommandArgs?: string[];
   languages?: {
     [key: string]: LanguageServerConfig;
