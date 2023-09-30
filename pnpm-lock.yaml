@@ -50,8 +50,8 @@ devDependencies:
     specifier: ^5.0.3
     version: 5.0.4
   '@types/os-utils':
-    specifier: ^0.0.1
-    version: 0.0.1
+    specifier: ^0.0.2
+    version: 0.0.2
   '@types/ws':
     specifier: ^8.5.5
     version: 8.5.5
@@ -321,8 +321,8 @@ packages:
   /@types/node@20.6.3:
     resolution: {integrity: sha512-HksnYH4Ljr4VQgEy2lTStbCKv/P590tmPe5HqOnv9Gprffgv5WXAY+Y5Gqniu0GGqeTCUdBnzC3QSrzPkBkAMA==}
 
-  /@types/os-utils@0.0.1:
-    resolution: {integrity: sha512-r5a1I4xr8e25GFiLdpHV+jHUawtbmtuCQHR1P3SH/Y1gmRy0KLjBVGe5uUkODU/6GntoGPhOu05jv+sBdAVpog==}
+  /@types/os-utils@0.0.2:
+    resolution: {integrity: sha512-KzeKj7FfEvZGImfCAQGkwk55EFDEagkSw6Mj+YTTwbzzwxoO9xYWNOHj2viAvn66V2eXRL7ealCnHB7IxFH0hw==}
     dev: true
 
   /@types/ws@8.5.5:
