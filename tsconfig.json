@@ -3,10 +3,8 @@
     "target": "es5",
     "outDir": "js",
     "resolveJsonModule": true,
-    "strict": true
+    "strict": true,
+    "esModuleInterop": true
   },
-  "exclude": [
-    "node_modules",
-    "**/.file-history.json"
-  ]
+  "exclude": ["node_modules", "**/.file-history.json"]
 }

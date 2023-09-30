@@ -4,11 +4,10 @@
   "description": "A Replit Goval server in Node",
   "main": "js/index.js",
   "bin": "js/index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write .",
-    "build": "rm -rf js && esbuild index.ts --outdir=js --platform=node --target=node18 --minify",
+    "build": "rm -rf js && esbuild src/index.ts --outdir=js --platform=node --target=node18 --bundle --packages=external",
     "dev": "pnpm run build && node js/index.js",
     "pkg": "pnpm run build && rm dist/*; npx pkg ."
   },
@@ -45,6 +44,6 @@
     "@types/ws": "^8.5.5",
     "esbuild": "^0.19.4",
     "prettier": "2.8.8",
-    "typescript": "^5.1.6"
+    "typescript": "^5.2.2"
   }
 }

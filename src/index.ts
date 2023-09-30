@@ -2,12 +2,13 @@
 
 import { makeConsoleSafe } from 'safe-logging-replit';
 
-import * as _package from './package.json';
-import * as arg from 'arg';
+import * as _package from '../package.json';
+import arg from 'arg';
 import * as os from 'os';
 import * as osUtils from 'os-utils';
 import { WebSocket, WebSocketServer } from 'ws';
-import { api } from '@replit/protocol';
+import _protocol from '@replit/protocol';
+import api = _protocol.api;
 import { exec, spawn, execSync, ChildProcess } from 'child_process';
 import { spawn as spawnPty } from 'node-pty';
 import { query } from 'replit-graphql';
@@ -20,12 +21,11 @@ import { normalize as normalizePath, join as joinPath } from 'path';
 import { parse as parseToml } from 'toml';
 import { diffChars } from 'diff';
 import { minimatch } from 'minimatch';
-import { checkCommandInteractive, checkCommandsInteractive } from './util/checkCommand';
 import {
-  escapeQuotes,
-  cmdArgsToString,
-  cmdStringToArgs,
-} from './util/cmdArgs';
+  checkCommandInteractive,
+  checkCommandsInteractive,
+} from './util/checkCommand';
+import { escapeQuotes, cmdArgsToString, cmdStringToArgs } from './util/cmdArgs';
 import { bitsToAscii as permissionBitsToAscii } from './util/permissions';
 import { showUsage } from './util/usage';
 
@@ -223,7 +223,10 @@ function startPty(
   chanId: number,
   ws: WebSocket,
   infoCallback: () => [
-    string | null, string | null, number | null, string | null
+    string | null,
+    string | null,
+    number | null,
+    string | null
   ]
 ) {
   const [replId, username, userId, replUrl] = infoCallback();
@@ -303,7 +306,9 @@ function startPty(
       return;
     }
 
-    (channels[chanId]!.process as IPty).write('echo -n "ptyDev:"`tty`":ptyDev"\r');
+    (channels[chanId]!.process as IPty).write(
+      'echo -n "ptyDev:"`tty`":ptyDev"\r'
+    );
   }, 10);
 
   channels[chanId]!.process?.on('exit', () => {
@@ -333,22 +338,24 @@ const sessions: {
   [sessionId: number]: {
     ws: WebSocket;
     channels: {
-      [chanId: number]: {
-        openChan: ReplitProtocol.OpenChannel;
-        subscriptions?: {
-          [path: string]: any; // TODO: fs.watcher
-        };
-        otstatus?: {
-          content: string;
-          version: number;
-          linkedFile: string | null;
-          cursors: Cursor[];
-        };
-        flushing?: boolean;
-        process?: IPty | ChildProcess; // TODO: node-pty or ChildProcess
-        processPtyDev?: string | null;
-        showOutput?: boolean;
-      } | undefined;
+      [chanId: number]:
+        | {
+            openChan: ReplitProtocol.OpenChannel;
+            subscriptions?: {
+              [path: string]: any; // TODO: fs.watcher
+            };
+            otstatus?: {
+              content: string;
+              version: number;
+              linkedFile: string | null;
+              cursors: Cursor[];
+            };
+            flushing?: boolean;
+            process?: IPty | ChildProcess; // TODO: node-pty or ChildProcess
+            processPtyDev?: string | null;
+            showOutput?: boolean;
+          }
+        | undefined;
     };
     userId: number | null;
     username: string | null;
@@ -544,7 +551,9 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.closeChan) {
-      switch (channels[msg.closeChan.id]!.openChan.service) { // TODO: check if it exists
+      switch (
+        channels[msg.closeChan.id]!.openChan.service // TODO: check if it exists
+      ) {
         case 'ot':
           if (channels[msg.closeChan.id]!.subscriptions) {
             for (const [path, watcher] of Object.entries(
@@ -595,7 +604,9 @@ wss.on('connection', (ws) => {
             id: userId,
           },
         }).then((res) => {
-          username = ((res as any).data?.user?.username || null) as string | null;
+          username = ((res as any).data?.user?.username || null) as
+            | string
+            | null;
           sessions[sessionId].username = username;
 
           console.log(
@@ -927,7 +938,9 @@ wss.on('connection', (ws) => {
                   api.Command.create({
                     channel: msg.channel,
                     ref: msg.ref,
-                    error: `unable to subscribe file from fsevents: ${err instanceof Error ? err.message : err}`,
+                    error: `unable to subscribe file from fsevents: ${
+                      err instanceof Error ? err.message : err
+                    }`,
                   })
                 ).finish()
               );
@@ -1011,7 +1024,8 @@ wss.on('connection', (ws) => {
       );
     } else if (/*msg.otLinkFile?.file.path || */ msg.read) {
       const origFile = /*msg.otLinkFile?.file.path || */ msg.read.path; // TODO: normalize path
-      const file = origFile == govalIdentFile ? 'goval-server-info.json' : origFile;
+      const file =
+        origFile == govalIdentFile ? 'goval-server-info.json' : origFile;
 
       fs.readFile(file, (err, data) => {
         if (err) {
@@ -1098,7 +1112,9 @@ wss.on('connection', (ws) => {
       });
     } else if (msg.otLinkFile) {
       if (channels[msg.channel]!.otstatus) {
-        const path = msg.otLinkFile.file ? normalizePath(msg.otLinkFile.file.path) : null;
+        const path = msg.otLinkFile.file
+          ? normalizePath(msg.otLinkFile.file.path)
+          : null;
 
         if (path) {
           fs.readFile(path, (err, data) => {
@@ -1141,7 +1157,7 @@ wss.on('connection', (ws) => {
 
               console.log('Created initial version of', path);
             }
-            
+
             // TODO: check if otstatus is undefined
             // For now, we assume that it is defined
 
@@ -1294,7 +1310,8 @@ wss.on('connection', (ws) => {
       }
     } else if (msg.ot) {
       const file = channels[msg.channel]!.otstatus?.linkedFile
-        ? normalizePath(channels[msg.channel]!.otstatus!.linkedFile!) : null;
+        ? normalizePath(channels[msg.channel]!.otstatus!.linkedFile!)
+        : null;
 
       if (file) {
         fs.readFile(file, 'utf-8', (err, data) => {
@@ -1487,7 +1504,10 @@ wss.on('connection', (ws) => {
         ).finish()
       );
     } else if (msg.resizeTerm) {
-      if (channels[msg.channel]!.process && !(channels[msg.channel]!.process instanceof ChildProcess)) {
+      if (
+        channels[msg.channel]!.process &&
+        !(channels[msg.channel]!.process instanceof ChildProcess)
+      ) {
         (channels[msg.channel]!.process as IPty).resize(
           msg.resizeTerm.cols,
           msg.resizeTerm.rows
@@ -1588,13 +1608,16 @@ wss.on('connection', (ws) => {
                 },
                 orderedEnv:
                   typeof dotReplit.env == 'object'
-                    ? Object.entries(dotReplit.env).map((entry) => ({
-                        key: entry[0],
-                        value: entry[1],
-                      } as {
-                        key: string;
-                        value: string;
-                      }))
+                    ? Object.entries(dotReplit.env).map(
+                        (entry) =>
+                          ({
+                            key: entry[0],
+                            value: entry[1],
+                          } as {
+                            key: string;
+                            value: string;
+                          })
+                      )
                     : null,
               },
             },
@@ -1603,7 +1626,9 @@ wss.on('connection', (ws) => {
       );
     } else if (msg.runMain) {
       if (!channels[msg.channel]!.process) {
-        console.warn('Warning: client tried to run a channel without a process (init)');
+        console.warn(
+          'Warning: client tried to run a channel without a process (init)'
+        );
         return;
       }
 
@@ -1623,12 +1648,16 @@ wss.on('connection', (ws) => {
 
       setTimeout(() => {
         if (!channels[msg.channel]?.process) {
-          console.warn('Warning: client tried to run a channel without a process (run)');
+          console.warn(
+            'Warning: client tried to run a channel without a process (run)'
+          );
           return;
         }
 
         if (channels[msg.channel]!.process instanceof ChildProcess) {
-          console.warn('Warning: client tried to run a channel with a process that is not a PTY');
+          console.warn(
+            'Warning: client tried to run a channel with a process that is not a PTY'
+          );
           return;
         }
 
@@ -1647,9 +1676,7 @@ wss.on('connection', (ws) => {
           );
         });
 
-        pty.write(
-          `${ansiClear}${dotReplit.fullRunCommand}\rexit\r`
-        );
+        pty.write(`${ansiClear}${dotReplit.fullRunCommand}\rexit\r`);
 
         ws.send(
           api.Command.encode(
@@ -1668,12 +1695,16 @@ wss.on('connection', (ws) => {
       }, 100);
     } else if (msg.clear) {
       if (!channels[msg.channel]!.process) {
-        console.warn('Warning: client tried to clear a channel without a process');
+        console.warn(
+          'Warning: client tried to clear a channel without a process'
+        );
         return;
       }
 
       if (channels[msg.channel]!.process instanceof ChildProcess) {
-        console.warn('Warning: client tried to clear a channel with a process that is not a PTY');
+        console.warn(
+          'Warning: client tried to clear a channel with a process that is not a PTY'
+        );
         return;
       }
 
@@ -1743,7 +1774,8 @@ wss.on('connection', (ws) => {
         );
       });
 
-      channels[msg.channel].process!.on('data', (data) => { // TODO: data type
+      channels[msg.channel].process!.on('data', (data) => {
+        // TODO: data type
         ws.send(
           api.Command.encode(
             api.Command.create({
@@ -1805,13 +1837,15 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.send(api.Command.encode(
-    api.Command.create({
-      containerState: {
-        state: api.ContainerState.State.READY,
-      }
-    })
-  ).finish());
+  ws.send(
+    api.Command.encode(
+      api.Command.create({
+        containerState: {
+          state: api.ContainerState.State.READY,
+        },
+      })
+    ).finish()
+  );
 
   ws.send(
     api.Command.encode(
