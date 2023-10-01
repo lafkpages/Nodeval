@@ -16,7 +16,7 @@ import { applyOTs, diffsToOTs } from './util/ot';
 import * as disk from 'diskusage';
 import * as fs from 'fs';
 import * as dotenv from 'dotenv';
-import * as crc32 from 'crc/crc32';
+import crc32 from 'crc/crc32';
 import { normalize as normalizePath, join as joinPath } from 'path';
 import { parse as parseToml } from 'toml';
 import { diffChars } from 'diff';
