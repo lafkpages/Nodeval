@@ -41,7 +41,7 @@
   "devDependencies": {
     "@types/diff": "^5.0.5",
     "@types/os-utils": "^0.0.2",
-    "@types/ws": "^8.5.5",
+    "@types/ws": "^8.5.6",
     "esbuild": "^0.19.4",
     "prettier": "2.8.8",
     "typescript": "^5.2.2"
