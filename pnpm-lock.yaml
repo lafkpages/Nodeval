@@ -47,8 +47,8 @@ dependencies:
 
 devDependencies:
   '@types/diff':
-    specifier: ^5.0.6
-    version: 5.0.6
+    specifier: ^5.0.7
+    version: 5.0.7
   '@types/os-utils':
     specifier: ^0.0.3
     version: 0.0.3
@@ -314,8 +314,8 @@ packages:
       protobufjs: 7.2.5
     dev: false
 
-  /@types/diff@5.0.6:
-    resolution: {integrity: sha512-OxYeXtiT2eAkK5Js6V6wY+Jb9uKdeSQIXxEZcRBqrE/VBJPMnrmsArARjGjiIulpu13vnpvGf+LLTNyZaJNPuw==}
+  /@types/diff@5.0.7:
+    resolution: {integrity: sha512-adBosR2GntaQQiuHnfRN9HtxYpoHHJBcdyz7VSXhjpSAmtvIfu/S1fjTqwuIx/Ypba6LCZdfWIqPYx2BR5TneQ==}
     dev: true
 
   /@types/node@20.6.3:

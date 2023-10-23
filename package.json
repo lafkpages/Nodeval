@@ -39,7 +39,7 @@
     "ws": "^8.11.0"
   },
   "devDependencies": {
-    "@types/diff": "^5.0.6",
+    "@types/diff": "^5.0.7",
     "@types/os-utils": "^0.0.3",
     "@types/ws": "^8.5.8",
     "esbuild": "^0.19.5",
