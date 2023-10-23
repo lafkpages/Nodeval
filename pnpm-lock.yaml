@@ -53,8 +53,8 @@ devDependencies:
     specifier: ^0.0.2
     version: 0.0.2
   '@types/ws':
-    specifier: ^8.5.7
-    version: 8.5.7
+    specifier: ^8.5.8
+    version: 8.5.8
   esbuild:
     specifier: ^0.19.4
     version: 0.19.4
@@ -325,8 +325,8 @@ packages:
     resolution: {integrity: sha512-KzeKj7FfEvZGImfCAQGkwk55EFDEagkSw6Mj+YTTwbzzwxoO9xYWNOHj2viAvn66V2eXRL7ealCnHB7IxFH0hw==}
     dev: true
 
-  /@types/ws@8.5.7:
-    resolution: {integrity: sha512-6UrLjiDUvn40CMrAubXuIVtj2PEfKDffJS7ychvnPU44j+KVeXmdHHTgqcM/dxLUTHxlXHiFM8Skmb8ozGdTnQ==}
+  /@types/ws@8.5.8:
+    resolution: {integrity: sha512-flUksGIQCnJd6sZ1l5dqCEG/ksaoAg/eUwiLAGTJQcfgvZJKF++Ta4bJA6A5aPSJmsr+xlseHn4KLgVlNnvPTg==}
     dependencies:
       '@types/node': 20.6.3
     dev: true
