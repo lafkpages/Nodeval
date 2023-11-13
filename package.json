@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/diff": "^5.0.8",
-    "@types/os-utils": "^0.0.3",
+    "@types/os-utils": "^0.0.4",
     "@types/ws": "^8.5.9",
     "esbuild": "^0.19.5",
     "prettier": "2.8.8",
