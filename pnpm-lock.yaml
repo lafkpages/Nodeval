@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@replit/protocol':
-    specifier: ^0.3.31
-    version: 0.3.31
+    specifier: ^0.3.42
+    version: 0.3.42
   arg:
     specifier: ^5.0.2
     version: 5.0.2
@@ -308,8 +308,8 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@replit/protocol@0.3.31:
-    resolution: {integrity: sha512-beG/x2bRYB/JTT56REptiLI/JmwzKHxA8EVJPj1+y10IjypXVLV7nrADVeGGzRWugM1OoRFm+zr97l2aXwUeuw==}
+  /@replit/protocol@0.3.42:
+    resolution: {integrity: sha512-oytsju8HQN34ZWUn892GpL2UGAThIO02aFa+3aL15jw5LwYkzJX+haHW1J3JaK88HHvrm2xTQQyQ4xGh1T6mAw==}
     dependencies:
       protobufjs: 7.2.5
     dev: false
