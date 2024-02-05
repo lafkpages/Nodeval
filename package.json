@@ -24,7 +24,7 @@
   "author": "LuisAFK",
   "license": "AGPL-3.0",
   "dependencies": {
-    "@replit/protocol": "^0.3.43",
+    "@replit/protocol": "^0.3.45",
     "arg": "^5.0.2",
     "crc": "^4.3.2",
     "diff": "^5.1.0",
