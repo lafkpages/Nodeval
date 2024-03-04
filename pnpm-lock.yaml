@@ -42,8 +42,8 @@ dependencies:
     specifier: ^3.0.0
     version: 3.0.0
   ws:
-    specifier: ^8.11.0
-    version: 8.14.2
+    specifier: ^8.16.0
+    version: 8.16.0
 
 devDependencies:
   '@types/diff':
@@ -471,7 +471,7 @@ packages:
   /replit-graphql@3.2.3:
     resolution: {integrity: sha512-iYaoCfe4qy56qSzhyDV1p97KY61FvYeVCjLlr7grZVBlhC+Us3RfZM3kmUlL4HswmVWZpdl1e0+/qsRxr6YLeA==}
     dependencies:
-      ws: 8.14.2
+      ws: 8.16.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -491,8 +491,8 @@ packages:
     hasBin: true
     dev: true
 
-  /ws@8.14.2:
-    resolution: {integrity: sha512-wEBG1ftX4jcglPxgFCMJmZ2PLtSbJ2Peg6TmpJFTbe9GZYOQCDPdMYu/Tm0/bGZkw8paZnJY45J4K2PZrLYq8g==}
+  /ws@8.16.0:
+    resolution: {integrity: sha512-HS0c//TP7Ina87TfiPUz1rQzMhHrl/SG2guqRcTOIUYD2q8uhUdNHZYJUaQ8aTGPzCh+c6oawMKW35nFl1dxyQ==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
