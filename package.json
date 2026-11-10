@@ -30,7 +30,7 @@
     "diff": "^5.1.0",
     "diskusage": "^1.1.3",
     "dotenv": "^16.4.5",
-    "minimatch": "^9.0.3",
+    "minimatch": "^11.0.1",
     "node-pty": "^1.0.0",
     "os-utils": "^0.0.14",
     "replit-graphql": "^3.2.3",
