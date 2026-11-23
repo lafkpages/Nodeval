@@ -24,8 +24,8 @@ dependencies:
     specifier: ^16.4.5
     version: 16.4.5
   minimatch:
-    specifier: ^11.0.8
-    version: 11.0.8
+    specifier: ^11.0.9
+    version: 11.0.9
   node-pty:
     specifier: ^1.0.0
     version: 1.0.0
@@ -457,8 +457,8 @@ packages:
     resolution: {integrity: sha512-lcHwpNoggQTObv5apGNCTdJrO69eHOZMi4BNC+rTLER8iHAqGrUVeLh/irVIM7zTw2bOXA8T6uNPeujwOLg/2Q==}
     dev: false
 
-  /minimatch@11.0.8:
-    resolution: {integrity: sha512-nFQuYSTVrGvysVBps5Ih+0BdnYFN/Cj3C816r6+p7yK+FHrVLGE4O4N9AFwykrlNlvM2HYt+Rad1Uiro6h88Ig==}
+  /minimatch@11.0.9:
+    resolution: {integrity: sha512-KCFkfyjqerNlSstjlhIGNXIKZGA/6O4V4RlhZ+Dsr621SPPw0mzlypE9D9ZOoPiVefHID+j7/XuMMlqfD/F60Q==}
     engines: {node: 20 || >=22}
     dependencies:
       '@isaacs/nonrecursive-glob-match': 1.1.0
